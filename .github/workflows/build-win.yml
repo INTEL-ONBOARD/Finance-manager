@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to GitHub Releases'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
 
 jobs:
   build-windows:
@@ -23,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Build and package (Windows)
-        run: npm run dist:win
+        run: npm run build && electron-builder --win --publish ${{ github.event.inputs.publish == 'true' && 'always' || 'never' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

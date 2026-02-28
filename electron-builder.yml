@@ -59,6 +59,6 @@ linux:
 # Auto-update publish target — GitHub Releases
 publish:
   provider: github
-  owner: YOUR_GITHUB_USERNAME
-  repo: YOUR_REPO_NAME
+  owner: INTEL-ONBOARD
+  repo: Finance-manager
   releaseType: release
