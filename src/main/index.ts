@@ -20,8 +20,7 @@ async function initStore() {
 }
 
 // ── MongoDB Atlas ─────────────────────────────────────────────────────────────
-const MONGO_URI =
-  'mongodb+srv://Vercel-Admin-atlas-aqua-anchor:T8K5CIeJfKOndJBL@atlas-aqua-anchor.gzur2aj.mongodb.net/?retryWrites=true&w=majority'
+const MONGO_URI = process.env.MONGO_URI ?? ''
 const DB_NAME = 'finwise'
 
 let mongoClient: MongoClient | null = null
