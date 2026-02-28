@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld('electron', {
       getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:notifications:getAll', userId),
       markRead: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:notifications:markRead', userId, id),
       markAllRead: (userId: string): Promise<void> => ipcRenderer.invoke('db:notifications:markAllRead', userId),
+      add: (userId: string, doc: unknown): Promise<void> => ipcRenderer.invoke('db:notifications:add', userId, doc),
     },
     clearUserData: (userId: string): Promise<void> => ipcRenderer.invoke('db:user:clearData', userId),
   },

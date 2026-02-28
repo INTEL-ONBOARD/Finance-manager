@@ -2,6 +2,7 @@ import {
   createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode,
 } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useFinance } from '@/context/FinanceContext';
 import type { ChatMessage, ChatUser } from '@/types/chat';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@ const GROUP_STUB: ConversationEntry = { id: 'group', lastMessage: '', lastMessag
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { addNotification } = useFinance();
 
   // Group chat is always present — initialize immediately so sidebar is never empty
   const [conversations, setConversations] = useState<ConversationEntry[]>([GROUP_STUB]);
@@ -74,6 +76,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     el.listUsers(user.id).then(users => setAllUsers(users)).catch(() => {});
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Ref keeps addNotification accessible in the onMessage closure without re-registering
+  const addNotificationRef = useRef(addNotification);
+  addNotificationRef.current = addNotification;
+  const userRef = useRef(user);
+  userRef.current = user;
+
   // Global message listener — registered once on mount
   useEffect(() => {
     const el = window.electron?.chat;
@@ -97,6 +105,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
         return [updated, ...prev];
       });
+      // Notify for messages from other users
+      if (message.senderId !== userRef.current?.id) {
+        addNotificationRef.current({
+          id: `notif_chat_${message.id}`,
+          title: conversationId === 'group'
+            ? `New message in Group Chat`
+            : `New message from ${message.senderName}`,
+          body: message.body.length > 80 ? message.body.slice(0, 80) + '…' : message.body,
+          time: 'Just now',
+          type: 'info',
+        });
+      }
     });
     return unsubscribe;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

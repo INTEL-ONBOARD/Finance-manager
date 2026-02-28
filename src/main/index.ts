@@ -127,6 +127,10 @@ function registerIpcHandlers(): void {
     await col('notifications').updateMany({ userId, read: false }, { $set: { read: true } })
     return null
   })
+  ipcMain.handle('db:notifications:add', async (_e, userId: string, doc: object) => {
+    await col('notifications').insertOne({ ...doc, userId })
+    return null
+  })
 
   // ── Auth / Users ──────────────────────────────────────────────────────────────
   ipcMain.handle('auth:register', async (_e, name: string, email: string, password: string) => {

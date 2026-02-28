@@ -41,6 +41,7 @@ declare global {
           getAll: (userId: string) => Promise<Notification[]>;
           markRead: (userId: string, id: string) => Promise<void>;
           markAllRead: (userId: string) => Promise<void>;
+          add: (userId: string, doc: Notification) => Promise<void>;
         };
         clearUserData: (userId: string) => Promise<void>;
       };
