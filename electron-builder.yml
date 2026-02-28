@@ -1,0 +1,57 @@
+appId: com.finmate.app
+productName: FinMate
+copyright: Copyright © 2026 FinMate
+
+directories:
+  buildResources: assets
+  output: dist
+
+files:
+  - out/**/*
+  - package.json
+  - node_modules/**/*
+
+# macOS — produces .dmg for both Intel (x64) and Apple Silicon (arm64)
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  category: public.app-category.finance
+  icon: assets/icon.icns
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
+dmg:
+  title: "FinMate ${version}"
+  backgroundColor: "#0d1117"
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# Windows — produces NSIS installer (.exe) for x64
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: assets/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: FinMate
+
+# Linux — bonus AppImage
+linux:
+  target:
+    - AppImage
+  category: Finance
+  icon: assets/icon.png

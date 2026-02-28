@@ -1,26 +1,43 @@
 {
   "name": "finance-manager",
   "version": "0.1.0",
+  "description": "Personal Finance Management App",
+  "author": "The FinMate Team",
   "private": true,
+  "main": "out/main/index.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "unset ELECTRON_RUN_AS_NODE && electron-vite dev",
+    "build": "unset ELECTRON_RUN_AS_NODE && electron-vite build",
+    "preview": "unset ELECTRON_RUN_AS_NODE && electron-vite preview",
+    "lint": "eslint .",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac:x64": "npm run build && electron-builder --mac --x64",
+    "dist:mac:arm64": "npm run build && electron-builder --mac --arm64"
   },
   "dependencies": {
-    "next": "16.1.6",
+    "electron-store": "^10.1.0",
+    "framer-motion": "^12.34.3",
+    "lucide-react": "^0.575.0",
+    "mongodb": "^7.1.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-router-dom": "^7.13.1",
+    "recharts": "^3.7.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^3.1.0",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

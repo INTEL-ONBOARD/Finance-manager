@@ -1,0 +1,146 @@
+/* Local Geist fonts — offline-capable for Electron desktop app */
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import "tailwindcss";
+
+/* ── Design tokens — dark (default) ─────────────────────── */
+:root {
+  --bg-primary:    #0d1117;
+  --bg-secondary:  #161b27;
+  --bg-card:       #161b27;
+  --bg-card-hover: #1c2236;
+  --bg-sidebar:    #0d1117;
+  --border:        #1e293b;
+  --border-light:  #334155;
+  --text-primary:  #f1f5f9;
+  --text-secondary:#94a3b8;
+  --text-muted:    #64748b;
+  --accent-green:  #22c55e;
+  --accent-red:    #ef4444;
+  --accent-blue:   #3b82f6;
+  --accent-yellow: #eab308;
+  --accent-brand:  #84cc16;
+  --accent-brand-dim: rgba(132,204,22,0.15);
+}
+
+/* ── Design tokens — light ───────────────────────────────── */
+[data-theme="light"] {
+  --bg-primary:    #f9fafb;
+  --bg-secondary:  #f2f4f7;
+  --bg-card:       #ffffff;
+  --bg-card-hover: #f9fafb;
+  --bg-sidebar:    #ffffff;
+  --border:        #eaecf0;
+  --border-light:  #f2f4f7;
+  --text-primary:  #101828;
+  --text-secondary:#344054;
+  --text-muted:    #98a2b3;
+  --accent-green:  #22c55e;
+  --accent-red:    #ef4444;
+  --accent-blue:   #3b82f6;
+  --accent-yellow: #eab308;
+  --accent-brand:  #84cc16;
+  --accent-brand-dim: rgba(132,204,22,0.1);
+}
+
+/* ── Base resets ─────────────────────────────────────────── */
+html,
+body {
+  height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Vite React root needs full height */
+#root {
+  height: 100%;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border-light); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Component classes ───────────────────────────────────── */
+@layer components {
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .card:hover {
+    border-color: var(--border-light);
+    background: var(--bg-card-hover);
+  }
+}
+
+/* ── Keyframes ───────────────────────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-brand {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}

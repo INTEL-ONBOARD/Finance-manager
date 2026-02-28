@@ -1,0 +1,43 @@
+export {};
+
+import type { Transaction, SavingsGoal, Bill, Account, Notification } from '@/context/FinanceContext';
+
+declare global {
+  interface Window {
+    electron?: {
+      platform: 'darwin' | 'win32' | 'linux';
+      getVersion: () => Promise<string>;
+      openExternal: (url: string) => Promise<void>;
+      store: {
+        get: (key: string) => Promise<unknown>;
+        set: (key: string, value: unknown) => Promise<void>;
+        delete: (key: string) => Promise<void>;
+      };
+      db: {
+        transactions: {
+          getAll: () => Promise<Transaction[]>;
+          add: (doc: Transaction) => Promise<void>;
+          delete: (id: string) => Promise<void>;
+        };
+        goals: {
+          getAll: () => Promise<SavingsGoal[]>;
+          add: (doc: SavingsGoal) => Promise<void>;
+          update: (id: string, updates: Partial<SavingsGoal>) => Promise<void>;
+          delete: (id: string) => Promise<void>;
+        };
+        bills: {
+          getAll: () => Promise<Bill[]>;
+          togglePaid: (id: string) => Promise<void>;
+        };
+        accounts: {
+          getAll: () => Promise<Account[]>;
+        };
+        notifications: {
+          getAll: () => Promise<Notification[]>;
+          markRead: (id: string) => Promise<void>;
+          markAllRead: () => Promise<void>;
+        };
+      };
+    };
+  }
+}
