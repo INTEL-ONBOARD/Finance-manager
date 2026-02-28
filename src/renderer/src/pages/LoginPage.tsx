@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Hexagon, Lock, Mail, ArrowRight } from 'lucide-react';
+import { Hexagon, Lock, Mail, ArrowRight, Download, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -12,6 +12,23 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    type UpdateStatus = 'idle' | 'available' | 'downloading' | 'downloaded' | 'installing';
+    const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
+    const [updateProgress, setUpdateProgress] = useState(0);
+
+    useEffect(() => {
+        const el = window.electron?.updater;
+        if (!el) return;
+        const cleanups = [
+            el.onAvailable(() => setUpdateStatus('available')),
+            el.onNotAvailable(() => setUpdateStatus('idle')),
+            el.onProgress((p) => { setUpdateProgress(p.percent); setUpdateStatus('downloading'); }),
+            el.onDownloaded(() => setUpdateStatus('downloaded')),
+            el.onError(() => setUpdateStatus('idle')),
+        ];
+        return () => cleanups.forEach(fn => fn());
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -84,6 +101,79 @@ export default function LoginPage() {
             {/* Form / Right Side */}
             <div className="flex-1 flex flex-col items-center justify-center p-8 lg:p-16 relative"
                 style={{ background: 'var(--bg-primary)' }}>
+                {/* Dev: updater widget */}
+                <div style={{ position: 'absolute', bottom: 16, right: 16 }}>
+                    {updateStatus === 'idle' && (
+                        <button
+                            onClick={() => window.electron?.updater.check()}
+                            title="Check for updates"
+                            style={{ opacity: 0.35, color: 'var(--text-muted)' }}
+                            className="hover:opacity-80 transition-opacity"
+                        >
+                            <Download size={16} />
+                        </button>
+                    )}
+                    {updateStatus === 'available' && (
+                        <button
+                            onClick={() => window.electron?.updater.download()}
+                            title="Download update"
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 6,
+                                background: '#84cc16', color: '#0d1117',
+                                borderRadius: 8, padding: '4px 10px',
+                                fontSize: 11, fontWeight: 700,
+                            }}
+                            className="hover:brightness-110 transition-all"
+                        >
+                            <Download size={12} />
+                            Download Update
+                        </button>
+                    )}
+                    {updateStatus === 'downloading' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {/* Circular progress */}
+                            <svg width="28" height="28" style={{ transform: 'rotate(-90deg)' }}>
+                                <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(132,204,22,0.15)" strokeWidth="2.5" />
+                                <circle
+                                    cx="14" cy="14" r="11" fill="none"
+                                    stroke="#84cc16" strokeWidth="2.5"
+                                    strokeDasharray={`${2 * Math.PI * 11}`}
+                                    strokeDashoffset={`${2 * Math.PI * 11 * (1 - updateProgress / 100)}`}
+                                    strokeLinecap="round"
+                                    style={{ transition: 'stroke-dashoffset 0.3s ease' }}
+                                />
+                            </svg>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Geist Mono, monospace' }}>
+                                {Math.round(updateProgress)}%
+                            </span>
+                        </div>
+                    )}
+                    {updateStatus === 'downloaded' && (
+                        <button
+                            onClick={() => { setUpdateStatus('installing'); window.electron?.updater.install(); }}
+                            title="Restart & install"
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 6,
+                                background: '#84cc16', color: '#0d1117',
+                                borderRadius: 8, padding: '4px 10px',
+                                fontSize: 11, fontWeight: 700,
+                            }}
+                            className="hover:brightness-110 transition-all"
+                        >
+                            <RotateCcw size={12} />
+                            Restart & Install
+                        </button>
+                    )}
+                    {updateStatus === 'installing' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: 0.6 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" style={{ animation: 'spin 1s linear infinite' }}>
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="#84cc16" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" />
+                            </svg>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Installing…</span>
+                        </div>
+                    )}
+                </div>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
