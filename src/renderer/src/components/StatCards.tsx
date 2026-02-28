@@ -19,8 +19,8 @@ export default function StatCards() {
       sub: `Across ${accounts.filter(a => a.type !== 'credit').length} accounts`,
       icon: Wallet,
       color: '#4ade80',
-      trend: '+2.4%',
-      good: true,
+      trend: accounts.filter(a => a.type !== 'credit').length > 0 ? 'All accounts' : 'No accounts',
+      good: totalBalance > 0,
       href: '/accounts',
     },
     {
@@ -46,11 +46,11 @@ export default function StatCards() {
     {
       label: 'Investments',
       value: investmentAccount ? `$${investmentAccount.balance.toLocaleString()}` : '$0',
-      sub: '+12.4% all-time return',
+      sub: investmentAccount ? 'Investment portfolio' : 'No investment account',
       icon: TrendingUp,
       color: '#a78bfa',
-      trend: '+1.8% this mo.',
-      good: true,
+      trend: investmentAccount ? 'Portfolio' : '—',
+      good: !!investmentAccount,
       href: '/investments',
     },
   ];

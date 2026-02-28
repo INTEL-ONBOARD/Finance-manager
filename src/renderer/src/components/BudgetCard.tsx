@@ -4,13 +4,6 @@ import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useFinance } from '@/context/FinanceContext';
 
-const historicalMonths = [
-  { month: 'Sep', income: 5200, expenses: 3900 },
-  { month: 'Oct', income: 5200, expenses: 4100 },
-  { month: 'Nov', income: 5600, expenses: 3700 },
-  { month: 'Dec', income: 5200, expenses: 4800 },
-  { month: 'Jan', income: 5200, expenses: 3950 },
-];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -33,9 +26,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function BudgetCard() {
   const { monthlyIncome, monthlyExpenses, monthlySaved, savingsRate } = useFinance();
+  const currentMonth = new Date().toLocaleDateString('en-US', { month: 'short' });
   const chartData = [
-    ...historicalMonths,
-    { month: 'Feb', income: Math.round(monthlyIncome), expenses: Math.round(monthlyExpenses) },
+    { month: currentMonth, income: Math.round(monthlyIncome), expenses: Math.round(monthlyExpenses) },
   ];
 
   return (

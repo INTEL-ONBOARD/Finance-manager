@@ -43,7 +43,7 @@ export default function NewDMModal({ open, onClose }: Props) {
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-sm rounded-2xl p-5 pointer-events-auto"
             style={{
-              background: '#1a2035',
+              background: 'var(--bg-card)',
               border: '1px solid var(--border-light)',
               boxShadow: '0 32px 64px rgba(0,0,0,0.6)',
             }}

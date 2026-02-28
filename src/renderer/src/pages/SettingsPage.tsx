@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Bell, Shield, CreditCard, Crown, Check, ChevronRight,
@@ -20,8 +21,12 @@ const CURRENCIES = ['USD', 'EUR', 'GBP', 'LKR', 'AUD', 'CAD', 'JPY', 'SGD'];
 const TIMEZONES  = ['Asia/Colombo', 'America/New_York', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Australia/Sydney', 'Asia/Tokyo'];
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [active, setActive] = useState('profile');
   const [saved, setSaved]   = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearDone, setClearDone] = useState(false);
   const [profile, setProfile] = useState({
     name: 'K. Wenuja', email: 'kwenuja@email.com', currency: 'USD', timezone: 'Asia/Colombo',
   });
@@ -50,6 +55,19 @@ export default function SettingsPage() {
     ];
     return () => cleanups.forEach(fn => fn());
   }, []);
+
+  const handleClearData = async () => {
+    if (!clearConfirm) { setClearConfirm(true); return; }
+    setClearing(true);
+    try {
+      await window.electron?.db.clearUserData(user!.id);
+      setClearDone(true);
+      setTimeout(() => setClearDone(false), 2500);
+    } finally {
+      setClearing(false);
+      setClearConfirm(false);
+    }
+  };
 
   const handleSave = () => {
     setSaved(true);
@@ -317,6 +335,26 @@ export default function SettingsPage() {
                       <div style={{ fontSize: 11, color: 'rgba(248,113,113,0.7)', marginTop: 2 }}>Permanently delete your account and all data</div>
                     </div>
                     <ChevronRight size={14} />
+                  </button>
+
+                  <button
+                    onClick={handleClearData}
+                    disabled={clearing}
+                    className="flex items-center gap-3 p-4 rounded-2xl text-left w-full transition-all"
+                    style={{ border: '1px solid rgba(248,113,113,0.25)', background: clearConfirm ? 'rgba(248,113,113,0.1)' : 'rgba(248,113,113,0.04)', color: 'var(--accent-red)' }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)' }}>
+                      <Trash2 size={14} style={{ color: 'var(--accent-red)' }} />
+                    </div>
+                    <div className="flex-1">
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>
+                        {clearing ? 'Clearing…' : clearDone ? 'All data cleared' : clearConfirm ? 'Click again to confirm' : 'Clear All My Data'}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'rgba(248,113,113,0.7)', marginTop: 2 }}>
+                        {clearDone ? 'Your data has been removed' : clearConfirm ? 'This will delete all transactions, goals, bills and accounts' : 'Remove all transactions, goals, bills, and accounts'}
+                      </div>
+                    </div>
+                    {!clearing && <ChevronRight size={14} />}
                   </button>
                 </div>
               </motion.div>

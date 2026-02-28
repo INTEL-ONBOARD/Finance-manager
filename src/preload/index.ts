@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld('electron', {
       markRead: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:notifications:markRead', userId, id),
       markAllRead: (userId: string): Promise<void> => ipcRenderer.invoke('db:notifications:markAllRead', userId),
     },
+    clearUserData: (userId: string): Promise<void> => ipcRenderer.invoke('db:user:clearData', userId),
   },
 
   // Chat

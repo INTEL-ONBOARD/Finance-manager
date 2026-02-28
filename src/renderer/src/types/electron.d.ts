@@ -42,6 +42,7 @@ declare global {
           markRead: (userId: string, id: string) => Promise<void>;
           markAllRead: (userId: string) => Promise<void>;
         };
+        clearUserData: (userId: string) => Promise<void>;
       };
       updater: {
         check:          () => Promise<void>;

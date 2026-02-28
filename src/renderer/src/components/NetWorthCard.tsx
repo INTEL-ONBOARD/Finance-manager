@@ -4,16 +4,6 @@ import { Link } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useFinance } from '@/context/FinanceContext';
 
-// Static 7-month historical trend (last 6 months + current derived from live data)
-const historicalData = [
-  { month: 'Aug', value: 62400 },
-  { month: 'Sep', value: 65100 },
-  { month: 'Oct', value: 63800 },
-  { month: 'Nov', value: 68200 },
-  { month: 'Dec', value: 71500 },
-  { month: 'Jan', value: 69800 },
-];
-
 const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   return (
@@ -28,18 +18,13 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function NetWorthCard() {
-  const { netWorth, accounts } = useFinance();
+  const { netWorth, accounts, monthlyIncome, monthlySaved } = useFinance();
   const totalAssets = accounts.filter(a => a.balance > 0).reduce((s, a) => s + a.balance, 0);
   const totalLiab = accounts.filter(a => a.balance < 0).reduce((s, a) => s + Math.abs(a.balance), 0);
-  const savingsAcct = accounts.find(a => a.type === 'savings');
-  const income = 6192.50; // monthlyIncome from context seed
-  const savingsRate = savingsAcct ? Math.round((savingsAcct.balance / income) * 10) : 0;
+  const savingsRate = monthlyIncome > 0 ? Math.round((monthlySaved / monthlyIncome) * 100) : 0;
 
-  const chartData = [...historicalData, { month: 'Feb', value: Math.round(netWorth) }];
-
-  const prevMonth = historicalData[historicalData.length - 1].value;
-  const change = netWorth - prevMonth;
-  const changePct = ((change / prevMonth) * 100).toFixed(1);
+  const currentMonth = new Date().toLocaleDateString('en-US', { month: 'short' });
+  const chartData = [{ month: currentMonth, value: Math.round(netWorth) }];
 
   return (
     <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
@@ -55,10 +40,10 @@ export default function NetWorthCard() {
           </div>
           <div className="flex items-center gap-1.5 mt-2">
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-bold"
-              style={{ background: change >= 0 ? 'rgba(34,197,94,0.1)' : 'rgba(248,113,113,0.1)', color: change >= 0 ? 'var(--accent-green)' : 'var(--text-primary)' }}>
-              <TrendingUp size={12} strokeWidth={3} /> {change >= 0 ? '+' : ''}${Math.abs(change).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              style={{ background: netWorth >= 0 ? 'rgba(34,197,94,0.1)' : 'rgba(248,113,113,0.1)', color: netWorth >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+              <TrendingUp size={12} strokeWidth={3} /> Net Worth
             </span>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>vs last month ({change >= 0 ? '+' : ''}{changePct}%)</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>Assets minus liabilities</span>
           </div>
         </div>
         <Link to="/accounts" className="flex items-center gap-1 text-sm font-semibold group transition-colors" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>

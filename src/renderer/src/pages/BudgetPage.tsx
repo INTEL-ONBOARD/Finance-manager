@@ -16,13 +16,6 @@ const BUDGET_LIMITS: Record<string, number> = {
   Utilities: 200, Health: 100, Shopping: 200, Entertainment: 150,
 };
 
-const historicalData = [
-  { month: 'Sep', income: 5200, expenses: 3900 },
-  { month: 'Oct', income: 5200, expenses: 4100 },
-  { month: 'Nov', income: 5600, expenses: 3700 },
-  { month: 'Dec', income: 5200, expenses: 4800 },
-  { month: 'Jan', income: 5200, expenses: 3950 },
-];
 
 export default function BudgetPage() {
   const { transactions, monthlyIncome, monthlyExpenses, monthlySaved, savingsRate } = useFinance();
@@ -42,7 +35,7 @@ export default function BudgetPage() {
     })).sort((a, b) => b.spent - a.spent);
   }, [transactions, currentMonthPrefix]);
 
-  const chartData = [...historicalData, { month: currentMonthLabel, income: Math.round(monthlyIncome), expenses: Math.round(monthlyExpenses) }];
+  const chartData = [{ month: currentMonthLabel, income: Math.round(monthlyIncome), expenses: Math.round(monthlyExpenses) }];
 
   return (
     <AppShell>

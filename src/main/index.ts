@@ -43,49 +43,6 @@ async function initMongo(): Promise<void> {
   await db.collection('messages').createIndex({ conversationId: 1, sentAt: -1 })
 }
 
-// ── Per-user seed data ────────────────────────────────────────────────────────
-async function seedForUser(userId: string): Promise<void> {
-  const today = new Date().toISOString().slice(0, 10)
-  const ym = today.slice(0, 7)
-  const seed = (n: string, offset: number) => `${ym}-${String(offset).padStart(2, '0')}`
-
-  const seedMap: Record<string, object[]> = {
-    transactions: [
-      { id: `t1_${userId}`, name: 'Monthly Salary',     category: 'Salary',    date: seed('', 25), amount:  5200,   account: 'Checking',    note: 'Paycheck' },
-      { id: `t2_${userId}`, name: 'Whole Foods Market', category: 'Groceries', date: seed('', 24), amount: -84.32,  account: 'Visa ••4521' },
-      { id: `t3_${userId}`, name: 'Netflix',            category: 'Netflix',   date: seed('', 23), amount: -15.99,  account: 'Visa ••4521' },
-      { id: `t4_${userId}`, name: 'Freelance Project',  category: 'Freelance', date: seed('', 22), amount:  850,    account: 'Checking',    note: 'UI design' },
-      { id: `t5_${userId}`, name: 'Rent',               category: 'Rent',      date: seed('', 20), amount: -1450,   account: 'Checking' },
-    ],
-    goals: [
-      { id: `g1_${userId}`, name: 'Emergency Fund',     icon: 'Umbrella', target: 15000, current: 9840,  color: '#60a5fa', deadline: 'Jun 2026' },
-      { id: `g2_${userId}`, name: 'Japan Trip',         icon: 'Plane',    target: 4500,  current: 2200,  color: '#f59e0b', deadline: 'Aug 2026' },
-      { id: `g3_${userId}`, name: 'New Laptop',         icon: 'Laptop',   target: 2000,  current: 1650,  color: '#4ade80', deadline: 'Mar 2026' },
-    ],
-    bills: [
-      { id: `b1_${userId}`, name: 'Rent',     amount: 1450,  dueDay: 1,  category: 'Housing',      color: '#f87171', paid: true },
-      { id: `b2_${userId}`, name: 'Electric', amount: 112,   dueDay: 14, category: 'Utilities',    color: '#60a5fa', paid: true },
-      { id: `b3_${userId}`, name: 'Internet', amount: 59.99, dueDay: 18, category: 'Utilities',    color: '#60a5fa', paid: false },
-      { id: `b4_${userId}`, name: 'Netflix',  amount: 15.99, dueDay: 23, category: 'Subscription', color: '#f87171', paid: true },
-    ],
-    accounts: [
-      { id: `a1_${userId}`, name: 'Checking Account', type: 'checking',   balance: 4820.50,  color: '#4ade80' },
-      { id: `a2_${userId}`, name: 'Savings Account',  type: 'savings',    balance: 9840.00,  color: '#60a5fa' },
-      { id: `a3_${userId}`, name: 'Visa ••4521',      type: 'credit',     balance: -1260.00, limit: 7000, color: '#f87171' },
-      { id: `a4_${userId}`, name: 'Investment',       type: 'investment', balance: 8240.00,  color: '#a78bfa' },
-    ],
-    notifications: [
-      { id: `n1_${userId}`, title: 'Bill Due Tomorrow',    body: 'Internet bill of $59.99 is due soon.',   time: '2h ago', read: false, type: 'alert' },
-      { id: `n2_${userId}`, title: 'Goal Almost Reached!', body: 'New Laptop goal is at 83%!',             time: '1d ago', read: false, type: 'success' },
-      { id: `n3_${userId}`, title: 'Monthly Summary Ready',body: 'Your monthly summary is available.',     time: '1w ago', read: true,  type: 'info' },
-    ],
-  }
-  for (const [name, docs] of Object.entries(seedMap)) {
-    const c = col(name)
-    const count = await c.countDocuments({ userId })
-    if (count === 0) await c.insertMany(docs.map(d => ({ ...d, userId })))
-  }
-}
 
 // ── IPC handlers ──────────────────────────────────────────────────────────────
 function registerIpcHandlers(): void {
@@ -180,7 +137,6 @@ function registerIpcHandlers(): void {
     const hash = (await scryptAsync(password, salt, 64) as Buffer).toString('hex')
     const id = `u_${Date.now()}`
     await users.insertOne({ id, name, email, salt, hash })
-    await seedForUser(id)
     return { ok: true, user: { id, name, email } }
   })
 
@@ -198,6 +154,13 @@ function registerIpcHandlers(): void {
   ipcMain.handle('auth:userExists', async (_e, email: string) => {
     const doc = await col('users').findOne({ email }, { projection: { _id: 0, id: 1 } })
     return !!doc
+  })
+
+  // ── Data management ───────────────────────────────────────────────────────────
+  ipcMain.handle('db:user:clearData', async (_e, userId: string) => {
+    const collections = ['transactions', 'goals', 'bills', 'accounts', 'notifications']
+    await Promise.all(collections.map(name => col(name).deleteMany({ userId })))
+    return null
   })
 
   // ── Chat ──────────────────────────────────────────────────────────────────────
