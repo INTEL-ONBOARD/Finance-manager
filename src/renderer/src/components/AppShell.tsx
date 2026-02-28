@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({ children, fullBleed }: { children: React.ReactNode; fullBleed?: boolean }) {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -36,8 +36,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Topbar />
-        <main className="flex-1 overflow-y-auto w-full">
-          <div className="p-8 w-full flex flex-col gap-6 h-full relative">
+        <main className={`flex-1 w-full ${fullBleed ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+          <div className={`${fullBleed ? 'h-full overflow-hidden' : 'p-8 flex flex-col gap-6'} w-full relative`}>
             {children}
           </div>
         </main>

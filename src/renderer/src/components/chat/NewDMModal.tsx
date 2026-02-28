@@ -35,14 +35,14 @@ export default function NewDMModal({ open, onClose }: Props) {
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
             onClick={onClose}
           />
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-1/2 left-1/2 z-50 w-full max-w-sm rounded-2xl p-5"
+            className="w-full max-w-sm rounded-2xl p-5 pointer-events-auto"
             style={{
-              transform: 'translate(-50%,-50%)',
               background: '#1a2035',
               border: '1px solid var(--border-light)',
               boxShadow: '0 32px 64px rgba(0,0,0,0.6)',
@@ -98,6 +98,7 @@ export default function NewDMModal({ open, onClose }: Props) {
               ))}
             </div>
           </motion.div>
+          </div>
         </div>
       )}
     </AnimatePresence>

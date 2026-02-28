@@ -91,7 +91,20 @@ async function seedForUser(userId: string): Promise<void> {
 function registerIpcHandlers(): void {
   // ── electron-store (theme persistence) ──────────────────────────────────────
   ipcMain.handle('store:get', (_e, key: string) => store?.get(key) ?? null)
-  ipcMain.handle('store:set', (_e, key: string, value: unknown) => store?.set(key, value))
+  ipcMain.handle('store:set', (_e, key: string, value: unknown) => {
+    store?.set(key, value)
+    if (process.platform === 'win32' && key === 'finmate-theme') {
+      const win = BrowserWindow.getAllWindows()[0]
+      if (win) {
+        const light = value === 'light'
+        win.setTitleBarOverlay({
+          color: light ? '#f0f4f8' : '#0d1117',
+          symbolColor: light ? '#0f172a' : '#ffffff',
+          height: 32,
+        })
+      }
+    }
+  })
   ipcMain.handle('store:delete', (_e, key: string) => store?.delete(key))
 
   // ── App utilities ────────────────────────────────────────────────────────────
@@ -266,6 +279,8 @@ function createWindow(): BrowserWindow {
   const savedTheme = store?.get('finmate-theme') as string | undefined
   const bgColor = savedTheme === 'light' ? '#f0f4f8' : '#0d1117'
 
+  const isLight = bgColor === '#f0f4f8'
+
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -274,8 +289,8 @@ function createWindow(): BrowserWindow {
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     ...(process.platform === 'win32' ? {
       titleBarOverlay: {
-        color: '#0d1117',
-        symbolColor: '#ffffff',
+        color: bgColor,
+        symbolColor: isLight ? '#0f172a' : '#ffffff',
         height: 32,
       },
       autoHideMenuBar: true,

@@ -36,7 +36,7 @@ export default function MessageInput() {
   return (
     <div className="px-4 py-3" style={{ borderTop: '1px solid var(--border)', flexShrink: 0 }}>
       <div
-        className="flex items-end gap-2 rounded-xl px-3 py-2"
+        className="flex items-center gap-2 rounded-xl px-3 py-2.5"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}
       >
         <textarea
@@ -54,6 +54,7 @@ export default function MessageInput() {
             lineHeight: 1.5,
             maxHeight: 96,
             scrollbarWidth: 'none',
+            padding: 0,
           }}
         />
         <button
@@ -61,7 +62,7 @@ export default function MessageInput() {
           disabled={!value.trim()}
           className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
           style={{
-            background: value.trim() ? 'var(--accent-brand, #6366f1)' : 'transparent',
+            background: value.trim() ? 'var(--accent-brand)' : 'transparent',
             color: value.trim() ? '#fff' : 'var(--text-muted)',
             flexShrink: 0,
           }}
