@@ -20,27 +20,27 @@ declare global {
       };
       db: {
         transactions: {
-          getAll: () => Promise<Transaction[]>;
-          add: (doc: Transaction) => Promise<void>;
-          delete: (id: string) => Promise<void>;
+          getAll: (userId: string) => Promise<Transaction[]>;
+          add: (userId: string, doc: Transaction) => Promise<void>;
+          delete: (userId: string, id: string) => Promise<void>;
         };
         goals: {
-          getAll: () => Promise<SavingsGoal[]>;
-          add: (doc: SavingsGoal) => Promise<void>;
-          update: (id: string, updates: Partial<SavingsGoal>) => Promise<void>;
-          delete: (id: string) => Promise<void>;
+          getAll: (userId: string) => Promise<SavingsGoal[]>;
+          add: (userId: string, doc: SavingsGoal) => Promise<void>;
+          update: (userId: string, id: string, updates: Partial<SavingsGoal>) => Promise<void>;
+          delete: (userId: string, id: string) => Promise<void>;
         };
         bills: {
-          getAll: () => Promise<Bill[]>;
-          togglePaid: (id: string) => Promise<void>;
+          getAll: (userId: string) => Promise<Bill[]>;
+          togglePaid: (userId: string, id: string) => Promise<void>;
         };
         accounts: {
-          getAll: () => Promise<Account[]>;
+          getAll: (userId: string) => Promise<Account[]>;
         };
         notifications: {
-          getAll: () => Promise<Notification[]>;
-          markRead: (id: string) => Promise<void>;
-          markAllRead: () => Promise<void>;
+          getAll: (userId: string) => Promise<Notification[]>;
+          markRead: (userId: string, id: string) => Promise<void>;
+          markAllRead: (userId: string) => Promise<void>;
         };
       };
       updater: {
@@ -53,6 +53,15 @@ declare global {
         onProgress:     (cb: (p: { percent: number }) => void) => () => void;
         onDownloaded:   (cb: () => void) => () => void;
         onError:        (cb: (msg: string) => void) => () => void;
+      };
+      chat: {
+        listUsers:          (selfId: string) => Promise<import('@/types/chat').ChatUser[]>;
+        fetchMessages:      (conversationId: string, limit: number, beforeSentAt?: string) => Promise<import('@/types/chat').ChatMessage[]>;
+        sendMessage:        (doc: Omit<import('@/types/chat').ChatMessage, 'id'>) => Promise<void>;
+        listConversations:  (userId: string) => Promise<Array<{ id: string; lastMessage: string; lastMessageAt: string }>>;
+        watchConversation:  (conversationId: string) => Promise<void>;
+        unwatchConversation:(conversationId: string) => Promise<void>;
+        onMessage:          (cb: (payload: { conversationId: string; message: import('@/types/chat').ChatMessage }) => void) => () => void;
       };
     };
   }

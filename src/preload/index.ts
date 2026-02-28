@@ -22,30 +22,51 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('auth:userExists', email),
   },
 
-  // MongoDB-backed collections
+  // MongoDB-backed collections (all scoped by userId)
   db: {
     transactions: {
-      getAll: (): Promise<unknown[]> => ipcRenderer.invoke('db:transactions:getAll'),
-      add: (doc: unknown): Promise<void> => ipcRenderer.invoke('db:transactions:add', doc),
-      delete: (id: string): Promise<void> => ipcRenderer.invoke('db:transactions:delete', id),
+      getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:transactions:getAll', userId),
+      add: (userId: string, doc: unknown): Promise<void> => ipcRenderer.invoke('db:transactions:add', userId, doc),
+      delete: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:transactions:delete', userId, id),
     },
     goals: {
-      getAll: (): Promise<unknown[]> => ipcRenderer.invoke('db:goals:getAll'),
-      add: (doc: unknown): Promise<void> => ipcRenderer.invoke('db:goals:add', doc),
-      update: (id: string, updates: unknown): Promise<void> => ipcRenderer.invoke('db:goals:update', id, updates),
-      delete: (id: string): Promise<void> => ipcRenderer.invoke('db:goals:delete', id),
+      getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:goals:getAll', userId),
+      add: (userId: string, doc: unknown): Promise<void> => ipcRenderer.invoke('db:goals:add', userId, doc),
+      update: (userId: string, id: string, updates: unknown): Promise<void> => ipcRenderer.invoke('db:goals:update', userId, id, updates),
+      delete: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:goals:delete', userId, id),
     },
     bills: {
-      getAll: (): Promise<unknown[]> => ipcRenderer.invoke('db:bills:getAll'),
-      togglePaid: (id: string): Promise<void> => ipcRenderer.invoke('db:bills:togglePaid', id),
+      getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:bills:getAll', userId),
+      togglePaid: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:bills:togglePaid', userId, id),
     },
     accounts: {
-      getAll: (): Promise<unknown[]> => ipcRenderer.invoke('db:accounts:getAll'),
+      getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:accounts:getAll', userId),
     },
     notifications: {
-      getAll: (): Promise<unknown[]> => ipcRenderer.invoke('db:notifications:getAll'),
-      markRead: (id: string): Promise<void> => ipcRenderer.invoke('db:notifications:markRead', id),
-      markAllRead: (): Promise<void> => ipcRenderer.invoke('db:notifications:markAllRead'),
+      getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:notifications:getAll', userId),
+      markRead: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:notifications:markRead', userId, id),
+      markAllRead: (userId: string): Promise<void> => ipcRenderer.invoke('db:notifications:markAllRead', userId),
+    },
+  },
+
+  // Chat
+  chat: {
+    listUsers: (selfId: string): Promise<unknown[]> =>
+      ipcRenderer.invoke('chat:users:list', selfId),
+    fetchMessages: (conversationId: string, limit: number, beforeSentAt?: string): Promise<unknown[]> =>
+      ipcRenderer.invoke('chat:messages:fetch', conversationId, limit, beforeSentAt),
+    sendMessage: (doc: object): Promise<void> =>
+      ipcRenderer.invoke('chat:messages:send', doc),
+    listConversations: (userId: string): Promise<unknown[]> =>
+      ipcRenderer.invoke('chat:conversations:list', userId),
+    watchConversation: (conversationId: string): Promise<void> =>
+      ipcRenderer.invoke('chat:stream:watch', conversationId),
+    unwatchConversation: (conversationId: string): Promise<void> =>
+      ipcRenderer.invoke('chat:stream:unwatch', conversationId),
+    onMessage(cb: (payload: { conversationId: string; message: unknown }) => void): () => void {
+      const l = (_e: Electron.IpcRendererEvent, payload: { conversationId: string; message: unknown }) => cb(payload)
+      ipcRenderer.on('chat:message:new', l)
+      return () => ipcRenderer.removeListener('chat:message:new', l)
     },
   },
 

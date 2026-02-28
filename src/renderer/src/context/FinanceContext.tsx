@@ -92,35 +92,42 @@ export function useFinance() {
   return ctx;
 }
 
-export function FinanceProvider({ children }: { children: ReactNode }) {
+interface FinanceProviderProps {
+  userId: string | null;
+  children: ReactNode;
+}
+
+export function FinanceProvider({ userId, children }: FinanceProviderProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [hydrated, setHydrated] = useState(false);
 
-  // Load data from MongoDB on first mount (Electron environment only)
+  // Re-hydrate whenever the logged-in user changes
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.electron?.db) {
-      setHydrated(true);
+    if (!userId || typeof window === 'undefined' || !window.electron?.db) {
+      setTransactions([]);
+      setGoals([]);
+      setBills([]);
+      setAccounts([]);
+      setNotifications([]);
       return;
     }
     Promise.all([
-      window.electron.db.transactions.getAll(),
-      window.electron.db.goals.getAll(),
-      window.electron.db.bills.getAll(),
-      window.electron.db.accounts.getAll(),
-      window.electron.db.notifications.getAll(),
+      window.electron.db.transactions.getAll(userId),
+      window.electron.db.goals.getAll(userId),
+      window.electron.db.bills.getAll(userId),
+      window.electron.db.accounts.getAll(userId),
+      window.electron.db.notifications.getAll(userId),
     ]).then(([txns, gs, bs, accs, notifs]) => {
       setTransactions(txns);
       setGoals(gs);
       setBills(bs);
       setAccounts(accs);
       setNotifications(notifs);
-      setHydrated(true);
-    }).catch(() => setHydrated(true));
-  }, []);
+    }).catch(console.error);
+  }, [userId]);
 
   // ── Derived values ─────────────────────────────────────────────────────────
   const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
@@ -146,46 +153,54 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
+    if (!userId) return;
     const newDoc: Transaction = { ...t, id: `t${Date.now()}` };
     setTransactions(prev => [newDoc, ...prev]);
-    window.electron?.db.transactions.add(newDoc);
-  }, []);
+    window.electron?.db.transactions.add(userId, newDoc);
+  }, [userId]);
 
   const deleteTransaction = useCallback((id: string) => {
+    if (!userId) return;
     setTransactions(prev => prev.filter(t => t.id !== id));
-    window.electron?.db.transactions.delete(id);
-  }, []);
+    window.electron?.db.transactions.delete(userId, id);
+  }, [userId]);
 
   const addGoal = useCallback((g: Omit<SavingsGoal, 'id'>) => {
+    if (!userId) return;
     const newDoc: SavingsGoal = { ...g, id: `g${Date.now()}` };
     setGoals(prev => [...prev, newDoc]);
-    window.electron?.db.goals.add(newDoc);
-  }, []);
+    window.electron?.db.goals.add(userId, newDoc);
+  }, [userId]);
 
   const updateGoal = useCallback((id: string, updates: Partial<SavingsGoal>) => {
+    if (!userId) return;
     setGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g));
-    window.electron?.db.goals.update(id, updates);
-  }, []);
+    window.electron?.db.goals.update(userId, id, updates);
+  }, [userId]);
 
   const deleteGoal = useCallback((id: string) => {
+    if (!userId) return;
     setGoals(prev => prev.filter(g => g.id !== id));
-    window.electron?.db.goals.delete(id);
-  }, []);
+    window.electron?.db.goals.delete(userId, id);
+  }, [userId]);
 
   const toggleBillPaid = useCallback((id: string) => {
+    if (!userId) return;
     setBills(prev => prev.map(b => b.id === id ? { ...b, paid: !b.paid } : b));
-    window.electron?.db.bills.togglePaid(id);
-  }, []);
+    window.electron?.db.bills.togglePaid(userId, id);
+  }, [userId]);
 
   const markNotificationRead = useCallback((id: string) => {
+    if (!userId) return;
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-    window.electron?.db.notifications.markRead(id);
-  }, []);
+    window.electron?.db.notifications.markRead(userId, id);
+  }, [userId]);
 
   const markAllNotificationsRead = useCallback(() => {
+    if (!userId) return;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    window.electron?.db.notifications.markAllRead();
-  }, []);
+    window.electron?.db.notifications.markAllRead(userId);
+  }, [userId]);
 
   return (
     <FinanceContext.Provider value={{

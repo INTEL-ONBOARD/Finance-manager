@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Bell, AlertCircle, CheckCircle2, Info, LogOut } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -43,7 +43,10 @@ const iconMap = {
 
 export default function Topbar() {
   const { unreadNotificationCount, notifications, markNotificationRead, markAllNotificationsRead } = useFinance();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : 'U';
   const navigate = useNavigate();
   const location = useLocation();
   const pageLabel = ROUTE_LABELS[location.pathname] ?? 'Page';
@@ -77,28 +80,28 @@ export default function Topbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       className="flex items-center justify-between px-8 py-5 shrink-0"
-      style={{ background: 'transparent' }}
+      style={{ background: 'transparent', WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <span style={{ fontSize: 13.5, color: 'var(--text-secondary)' }}>Home</span>
         <span style={{ fontSize: 13.5, color: 'var(--text-secondary)' }}>›</span>
         <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)' }}>{pageLabel}</span>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-6" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         {/* Search */}
         <div ref={ref} className="relative w-72">
           <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-colors"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
-            <Search size={15} style={{ color: '#64748b', flexShrink: 0 }} />
+            <Search size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             <input
               value={query}
               onChange={e => { setQuery(e.target.value); setOpen(true); }}
               onFocus={() => setOpen(true)}
               placeholder="Search anything"
-              className="flex-1 bg-transparent border-none outline-none font-medium placeholder-[#64748b]"
-              style={{ fontSize: 13, color: '#e2e8f0' }}
+              className="flex-1 bg-transparent border-none outline-none font-medium"
+              style={{ fontSize: 13, color: 'var(--text-primary)', caretColor: 'var(--accent-brand)' }}
             />
           </div>
           <AnimatePresence>
@@ -129,7 +132,8 @@ export default function Topbar() {
             <div ref={notifRef} className="relative flex items-center">
               <button
                 onClick={() => setNotifOpen(p => !p)}
-                className="relative text-[#64748b] hover:text-[#e2e8f0] transition-colors rounded-full p-0.5"
+                className="relative transition-colors rounded-full p-0.5"
+              style={{ color: 'var(--text-muted)' }}
               >
                 <Bell size={18} strokeWidth={1.5} />
                 {unreadNotificationCount > 0 && (
@@ -245,15 +249,16 @@ export default function Topbar() {
             <button
               onClick={handleLogout}
               title="Log out"
-              className="flex items-center text-[#64748b] hover:text-[#ef4444] transition-colors rounded-full p-0.5"
+              className="flex items-center transition-colors rounded-full p-0.5"
+            style={{ color: 'var(--text-muted)' }}
             >
               <LogOut size={17} strokeWidth={1.5} />
             </button>
 
             {/* User avatar */}
-            <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center border border-[rgba(0,0,0,0.1)] shadow-sm shrink-0"
-              style={{ background: '#f0fdf4', color: '#0f172a' }}>
-              <div className="text-[13px] font-semibold" style={{ letterSpacing: '0.02em' }}>US</div>
+            <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center border shrink-0"
+              style={{ background: 'var(--accent-brand)', color: '#fff', borderColor: 'var(--border-light)' }}>
+              <div className="text-[13px] font-semibold" style={{ letterSpacing: '0.02em' }}>{initials}</div>
             </div>
         </div>
       </div>
