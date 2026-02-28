@@ -1,9 +1,28 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Bell, AlertCircle, CheckCircle2, Info, LogOut } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useFinance } from '@/context/FinanceContext';
 import { useAuth } from '@/context/AuthContext';
+
+const ROUTE_LABELS: Record<string, string> = {
+  '/':             'Dashboard',
+  '/accounts':     'Accounts',
+  '/transactions': 'Transactions',
+  '/budget':       'Budget',
+  '/goals':        'Goals',
+  '/bills':        'Bills',
+  '/investments':  'Investments',
+  '/notifications':'Notifications',
+  '/settings':     'Settings',
+  '/help':         'Help',
+  '/ai-chat':      'AI Chat',
+  '/market':       'Market',
+  '/portfolio':    'Portfolio',
+  '/predictions':  'Predictions',
+  '/exchanges':    'Exchanges',
+  '/community':    'Community',
+};
 
 const SEARCH_LINKS = [
   { label: 'Overview', href: '/' },
@@ -26,6 +45,8 @@ export default function Topbar() {
   const { unreadNotificationCount, notifications, markNotificationRead, markAllNotificationsRead } = useFinance();
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const pageLabel = ROUTE_LABELS[location.pathname] ?? 'Page';
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -62,7 +83,7 @@ export default function Topbar() {
       <div className="flex items-center gap-2">
         <span style={{ fontSize: 13.5, color: 'var(--text-secondary)' }}>Home</span>
         <span style={{ fontSize: 13.5, color: 'var(--text-secondary)' }}>›</span>
-        <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)' }}>US Market</span>
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)' }}>{pageLabel}</span>
       </div>
 
       <div className="flex items-center gap-6">
