@@ -6,11 +6,14 @@ import { config as loadEnv } from 'dotenv'
 
 loadEnv({ override: false }) // loads .env for local dev; won't override CI env vars
 
+const MONGO_URI = process.env.MONGO_URI ?? ''
+console.log('[build] MONGO_URI present:', MONGO_URI.length > 0, '| starts with:', MONGO_URI.slice(0, 20) || '(empty)')
+
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     define: {
-      'process.env.MONGO_URI': JSON.stringify(process.env.MONGO_URI ?? ''),
+      'process.env.MONGO_URI': JSON.stringify(MONGO_URI),
     },
   },
   preload: {
