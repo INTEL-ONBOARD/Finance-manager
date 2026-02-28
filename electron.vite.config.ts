@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { config as loadEnv } from 'dotenv'
 
-loadEnv() // loads .env into process.env for dev/build
+loadEnv({ override: false }) // loads .env for local dev; won't override CI env vars
 
 export default defineConfig({
   main: {
