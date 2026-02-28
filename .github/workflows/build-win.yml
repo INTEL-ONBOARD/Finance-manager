@@ -33,6 +33,8 @@ jobs:
 
       - name: Build (Windows)
         run: npm run build
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
 
       - name: Package (Windows)
         run: npx electron-builder --win --publish ${{ github.event.inputs.publish == 'true' && 'always' || 'never' }}
