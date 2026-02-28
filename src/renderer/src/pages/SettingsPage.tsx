@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Bell, Shield, CreditCard, Crown, Check, ChevronRight,
   Camera, Lock, Smartphone, Trash2, Zap, BarChart3, Target, Receipt,
+  RefreshCw, Download, CheckCircle, AlertCircle, ArrowUpCircle,
 } from 'lucide-react';
 import AppShell from '@/components/AppShell';
 
@@ -12,6 +13,7 @@ const sections = [
   { id: 'security',      label: 'Security',      icon: Shield },
   { id: 'billing',       label: 'Billing',       icon: CreditCard },
   { id: 'upgrade',       label: 'Upgrade',       icon: Crown },
+  { id: 'updates',       label: 'Updates',       icon: Download },
 ];
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'LKR', 'AUD', 'CAD', 'JPY', 'SGD'];
@@ -27,6 +29,27 @@ export default function SettingsPage() {
     billReminders: true, goalProgress: true, largeTransactions: true,
     monthlyReport: true, weeklyDigest: false,
   });
+
+  type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error' | 'up-to-date';
+  const [updateStatus,     setUpdateStatus]     = useState<UpdateStatus>('idle');
+  const [updateInfo,       setUpdateInfo]       = useState<{ version: string; releaseNotes: string | null } | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [updateError,      setUpdateError]      = useState('');
+  const [appVersion,       setAppVersion]       = useState('');
+
+  useEffect(() => {
+    window.electron?.getVersion().then(setAppVersion);
+    if (!window.electron?.updater) return;
+    const cleanups = [
+      window.electron.updater.onChecking(()    => setUpdateStatus('checking')),
+      window.electron.updater.onAvailable((i)  => { setUpdateInfo(i); setUpdateStatus('available'); }),
+      window.electron.updater.onNotAvailable(() => setUpdateStatus('up-to-date')),
+      window.electron.updater.onProgress((p)   => { setDownloadProgress(p.percent); setUpdateStatus('downloading'); }),
+      window.electron.updater.onDownloaded(()   => setUpdateStatus('downloaded')),
+      window.electron.updater.onError((msg)    => { setUpdateError(msg); setUpdateStatus('error'); }),
+    ];
+    return () => cleanups.forEach(fn => fn());
+  }, []);
 
   const handleSave = () => {
     setSaved(true);
@@ -384,6 +407,173 @@ export default function SettingsPage() {
                       </button>
                     </div>
                   ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ─── Updates ─── */}
+            {active === 'updates' && (
+              <motion.div key="updates"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col gap-4">
+
+                {/* Version info card */}
+                <div className="card p-6 flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--accent-brand-dim)', border: '1px solid rgba(74,222,128,0.3)' }}>
+                    <ArrowUpCircle size={18} style={{ color: 'var(--accent-brand)' }} />
+                  </div>
+                  <div className="flex-1">
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>App Updates</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                      Current version:{' '}
+                      <span style={{ fontFamily: 'Geist Mono, monospace', color: 'var(--text-secondary)' }}>
+                        v{appVersion || '0.1.0'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status + action card */}
+                <div className="card p-6 flex flex-col gap-5">
+
+                  {/* Status row */}
+                  <div className="flex items-center gap-3">
+                    {updateStatus === 'idle' && (
+                      <>
+                        <RefreshCw size={15} style={{ color: 'var(--text-muted)' }} />
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Click below to check for updates.</span>
+                      </>
+                    )}
+                    {updateStatus === 'checking' && (
+                      <>
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+                          <RefreshCw size={15} style={{ color: 'var(--accent-brand)' }} />
+                        </motion.div>
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Checking for updates…</span>
+                      </>
+                    )}
+                    {updateStatus === 'up-to-date' && (
+                      <>
+                        <CheckCircle size={15} style={{ color: 'var(--accent-green)' }} />
+                        <span style={{ fontSize: 13, color: 'var(--accent-green)' }}>You're on the latest version.</span>
+                      </>
+                    )}
+                    {updateStatus === 'available' && (
+                      <>
+                        <ArrowUpCircle size={15} style={{ color: 'var(--accent-brand)' }} />
+                        <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>
+                          Update available — v{updateInfo?.version}
+                        </span>
+                      </>
+                    )}
+                    {updateStatus === 'downloading' && (
+                      <>
+                        <Download size={15} style={{ color: 'var(--accent-brand)' }} />
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                          Downloading… {downloadProgress}%
+                        </span>
+                      </>
+                    )}
+                    {updateStatus === 'downloaded' && (
+                      <>
+                        <CheckCircle size={15} style={{ color: 'var(--accent-green)' }} />
+                        <span style={{ fontSize: 13, color: 'var(--accent-green)' }}>
+                          Update downloaded. Ready to install.
+                        </span>
+                      </>
+                    )}
+                    {updateStatus === 'error' && (
+                      <>
+                        <AlertCircle size={15} style={{ color: 'var(--accent-red)' }} />
+                        <span style={{ fontSize: 13, color: 'var(--accent-red)' }}>
+                          Update error: {updateError}
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Progress bar — only visible during download */}
+                  {updateStatus === 'downloading' && (
+                    <div className="w-full rounded-full overflow-hidden"
+                      style={{ height: 6, background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: 'var(--accent-brand)' }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${downloadProgress}%` }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Release notes */}
+                  {(updateStatus === 'available' || updateStatus === 'downloaded') && updateInfo?.releaseNotes && (
+                    <div className="rounded-xl p-4" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>
+                        What's new in v{updateInfo.version}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                        {String(updateInfo.releaseNotes)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-3 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+
+                    {/* Check for updates */}
+                    {updateStatus !== 'downloading' && updateStatus !== 'downloaded' && (
+                      <button
+                        disabled={updateStatus === 'checking'}
+                        onClick={() => window.electron?.updater.check()}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                        style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          color: updateStatus === 'checking' ? 'var(--text-muted)' : 'var(--text-primary)',
+                          border: '1px solid var(--border)',
+                          cursor: updateStatus === 'checking' ? 'not-allowed' : 'pointer',
+                          opacity: updateStatus === 'checking' ? 0.6 : 1,
+                        }}>
+                        <RefreshCw size={13} />
+                        Check for Updates
+                      </button>
+                    )}
+
+                    {/* Download update */}
+                    {updateStatus === 'available' && (
+                      <button
+                        onClick={() => window.electron?.updater.download()}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
+                        style={{ background: 'var(--accent-brand)', color: '#0d1117' }}>
+                        <Download size={13} />
+                        Download Update
+                      </button>
+                    )}
+
+                    {/* Restart & Install */}
+                    {updateStatus === 'downloaded' && (
+                      <button
+                        onClick={() => window.electron?.updater.install()}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110"
+                        style={{ background: 'var(--accent-brand)', color: '#0d1117' }}>
+                        <ArrowUpCircle size={13} />
+                        Restart &amp; Install
+                      </button>
+                    )}
+
+                    {/* Retry on error */}
+                    {updateStatus === 'error' && (
+                      <button
+                        onClick={() => { setUpdateStatus('idle'); setUpdateError(''); window.electron?.updater.check(); }}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                        style={{ background: 'rgba(248,113,113,0.1)', color: 'var(--accent-red)', border: '1px solid rgba(248,113,113,0.2)' }}>
+                        <RefreshCw size={13} />
+                        Retry
+                      </button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}

@@ -38,4 +38,42 @@ contextBridge.exposeInMainWorld('electron', {
       markAllRead: (): Promise<void> => ipcRenderer.invoke('db:notifications:markAllRead'),
     },
   },
+
+  // Auto-updater
+  updater: {
+    check:    (): Promise<void> => ipcRenderer.invoke('updater:check'),
+    download: (): Promise<void> => ipcRenderer.invoke('updater:download'),
+    install:  (): Promise<void> => ipcRenderer.invoke('updater:install'),
+
+    onChecking(cb: () => void): () => void {
+      const l = () => cb()
+      ipcRenderer.on('updater:checking', l)
+      return () => ipcRenderer.removeListener('updater:checking', l)
+    },
+    onAvailable(cb: (info: { version: string; releaseNotes: string | null }) => void): () => void {
+      const l = (_e: Electron.IpcRendererEvent, info: { version: string; releaseNotes: string | null }) => cb(info)
+      ipcRenderer.on('updater:available', l)
+      return () => ipcRenderer.removeListener('updater:available', l)
+    },
+    onNotAvailable(cb: () => void): () => void {
+      const l = () => cb()
+      ipcRenderer.on('updater:not-available', l)
+      return () => ipcRenderer.removeListener('updater:not-available', l)
+    },
+    onProgress(cb: (p: { percent: number }) => void): () => void {
+      const l = (_e: Electron.IpcRendererEvent, p: { percent: number }) => cb(p)
+      ipcRenderer.on('updater:progress', l)
+      return () => ipcRenderer.removeListener('updater:progress', l)
+    },
+    onDownloaded(cb: () => void): () => void {
+      const l = () => cb()
+      ipcRenderer.on('updater:downloaded', l)
+      return () => ipcRenderer.removeListener('updater:downloaded', l)
+    },
+    onError(cb: (msg: string) => void): () => void {
+      const l = (_e: Electron.IpcRendererEvent, msg: string) => cb(msg)
+      ipcRenderer.on('updater:error', l)
+      return () => ipcRenderer.removeListener('updater:error', l)
+    },
+  },
 })

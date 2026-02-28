@@ -6,9 +6,9 @@
   "private": true,
   "main": "out/main/index.js",
   "scripts": {
-    "dev": "unset ELECTRON_RUN_AS_NODE && electron-vite dev",
-    "build": "unset ELECTRON_RUN_AS_NODE && electron-vite build",
-    "preview": "unset ELECTRON_RUN_AS_NODE && electron-vite preview",
+    "dev": "cross-env ELECTRON_RUN_AS_NODE= electron-vite dev",
+    "build": "cross-env ELECTRON_RUN_AS_NODE= electron-vite build",
+    "preview": "cross-env ELECTRON_RUN_AS_NODE= electron-vite preview",
     "lint": "eslint .",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",
@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "electron-store": "^10.1.0",
+    "electron-updater": "^6.3.9",
     "framer-motion": "^12.34.3",
     "lucide-react": "^0.575.0",
     "mongodb": "^7.1.0",
@@ -32,6 +33,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.7.0",
+    "cross-env": "^10.1.0",
     "electron": "^33.4.11",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.1.0",

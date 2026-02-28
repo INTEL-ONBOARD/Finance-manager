@@ -1,8 +1,14 @@
 import { app, BrowserWindow, shell, session, ipcMain } from 'electron'
 import { join } from 'path'
 import { MongoClient, Db, Collection } from 'mongodb'
+import { autoUpdater } from 'electron-updater'
 
 const isDev = !app.isPackaged
+
+// ── Auto-updater configuration ────────────────────────────────────────────────
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = false
+autoUpdater.logger = isDev ? console : null
 
 // ── electron-store (theme only) ───────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,6 +174,35 @@ function registerIpcHandlers(): void {
     await col('notifications').updateMany({ read: false }, { $set: { read: true } })
     return null
   })
+
+  // ── Auto-updater commands ─────────────────────────────────────────────────────
+  ipcMain.handle('updater:check',    () => autoUpdater.checkForUpdates())
+  ipcMain.handle('updater:download', () => autoUpdater.downloadUpdate())
+  ipcMain.handle('updater:install',  () => autoUpdater.quitAndInstall())
+}
+
+// ── Auto-updater event forwarding ─────────────────────────────────────────────
+function setupUpdaterEvents(win: BrowserWindow): void {
+  autoUpdater.on('checking-for-update', () =>
+    win.webContents.send('updater:checking'))
+
+  autoUpdater.on('update-available', (info) =>
+    win.webContents.send('updater:available', {
+      version: info.version,
+      releaseNotes: info.releaseNotes ?? null,
+    }))
+
+  autoUpdater.on('update-not-available', () =>
+    win.webContents.send('updater:not-available'))
+
+  autoUpdater.on('download-progress', (progress) =>
+    win.webContents.send('updater:progress', { percent: Math.round(progress.percent) }))
+
+  autoUpdater.on('update-downloaded', () =>
+    win.webContents.send('updater:downloaded'))
+
+  autoUpdater.on('error', (err) =>
+    win.webContents.send('updater:error', err.message))
 }
 
 // ── Window ────────────────────────────────────────────────────────────────────
@@ -227,6 +262,8 @@ async function bootstrap(): Promise<void> {
   registerIpcHandlers()
   const win = createWindow()
 
+  setupUpdaterEvents(win)
+
   if (!isDev) {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       callback({
@@ -239,12 +276,14 @@ async function bootstrap(): Promise<void> {
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' data:",
               "img-src 'self' data: blob:",
-              "connect-src 'self' https://*.mongodb.net wss://*.mongodb.net",
+              "connect-src 'self' https://*.mongodb.net wss://*.mongodb.net https://github.com https://objects.githubusercontent.com https://github-releases.githubusercontent.com",
             ].join('; '),
           ],
         },
       })
     })
+
+    setTimeout(() => autoUpdater.checkForUpdates(), 3000)
   }
 
   void win

@@ -55,3 +55,10 @@ linux:
     - AppImage
   category: Finance
   icon: assets/icon.png
+
+# Auto-update publish target — GitHub Releases
+publish:
+  provider: github
+  owner: YOUR_GITHUB_USERNAME
+  repo: YOUR_REPO_NAME
+  releaseType: release
