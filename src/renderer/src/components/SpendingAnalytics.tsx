@@ -32,7 +32,7 @@ export default function SpendingAnalytics() {
   const [view, setView] = useState<View>('breakdown');
 
   const spendingCategories = useMemo(() => {
-    const currentMonth = '2026-02';
+    const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
     const expenses = transactions.filter(t => t.amount < 0 && t.date.startsWith(currentMonth));
     const totals: Record<string, number> = {};
     expenses.forEach(t => { totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount); });

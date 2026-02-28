@@ -12,17 +12,16 @@ function Root() {
   return (
     <AuthProvider>
       <FinanceProvider>
-        <Suspense fallback={null}>
-          {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
-        </Suspense>
-        <App />
+        {splashDone ? (
+          <App />
+        ) : (
+          <Suspense fallback={null}>
+            <SplashScreen onDone={() => setSplashDone(true)} />
+          </Suspense>
+        )}
       </FinanceProvider>
     </AuthProvider>
   )
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <Root />
-  </React.StrictMode>
-)
+ReactDOM.createRoot(document.getElementById('root')!).render(<Root />)

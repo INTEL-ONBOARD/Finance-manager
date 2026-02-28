@@ -10,8 +10,8 @@ export default function AIChatPage() {
                     <BotMessageSquare size={32} />
                 </div>
 
-                <h1 className="text-3xl font-bold text-[#101828]">Hi, I'm FinMate AI</h1>
-                <p className="text-[#667085] text-lg leading-relaxed max-w-xl">
+                <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Hi, I'm FinMate AI</h1>
+                <p className="text-lg leading-relaxed max-w-xl" style={{ color: 'var(--text-secondary)' }}>
                     I can analyze your portfolio, find emerging market trends, break down complex earnings calls, or answer any financial questions you have.
                 </p>
 
@@ -22,9 +22,9 @@ export default function AIChatPage() {
                         "Analyze my portfolio risk based on current market volatility.",
                         "How do new inflation numbers affect the S&P 500?"
                     ].map((prompt, i) => (
-                        <button key={i} className="text-left bg-white border border-[#eaecf0] hover:border-[#84cc16] p-4 rounded-xl shadow-sm transition-all group flex items-start gap-3">
+                        <button key={i} className="text-left p-4 rounded-xl transition-all group flex items-start gap-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                             <Sparkles className="text-[#84cc16] shrink-0 mt-0.5" size={16} />
-                            <span className="text-[#344054] font-medium text-[14px] leading-snug group-hover:text-[#101828]">{prompt}</span>
+                            <span className="font-medium text-[14px] leading-snug" style={{ color: 'var(--text-primary)' }}>{prompt}</span>
                         </button>
                     ))}
                 </div>

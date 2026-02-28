@@ -2,6 +2,10 @@ import { app, BrowserWindow, shell, session, ipcMain } from 'electron'
 import { join } from 'path'
 import { MongoClient, Db, Collection } from 'mongodb'
 import { autoUpdater } from 'electron-updater'
+import { scrypt, randomBytes, timingSafeEqual } from 'crypto'
+import { promisify } from 'util'
+
+const scryptAsync = promisify(scrypt)
 
 const isDev = !app.isPackaged
 
@@ -31,76 +35,10 @@ function col(name: string): Collection {
   return db.collection(name)
 }
 
-// ── Seed data (mirrors FinanceContext.tsx SEED_* arrays) ─────────────────────
-const SEED_TRANSACTIONS = [
-  { id: 't1',  name: 'Monthly Salary',      category: 'Salary',     date: '2026-02-25', amount:  5200,   account: 'Checking',    note: 'February paycheck' },
-  { id: 't2',  name: 'Whole Foods Market',  category: 'Groceries',  date: '2026-02-24', amount: -84.32,  account: 'Visa ••4521' },
-  { id: 't3',  name: 'Netflix',             category: 'Netflix',    date: '2026-02-23', amount: -15.99,  account: 'Visa ••4521' },
-  { id: 't4',  name: 'Freelance Project',   category: 'Freelance',  date: '2026-02-22', amount:  850,    account: 'Checking',    note: 'UI design for client' },
-  { id: 't5',  name: 'Rent — Feb',          category: 'Rent',       date: '2026-02-20', amount: -1450,   account: 'Checking' },
-  { id: 't6',  name: 'Uber',                category: 'Transport',  date: '2026-02-19', amount: -18.50,  account: 'Visa ••4521' },
-  { id: 't7',  name: 'Chipotle',            category: 'Dining',     date: '2026-02-18', amount: -13.75,  account: 'Visa ••4521' },
-  { id: 't8',  name: 'Gym Membership',      category: 'Gym',        date: '2026-02-15', amount: -49.99,  account: 'Checking' },
-  { id: 't9',  name: 'Electric Bill',       category: 'Utilities',  date: '2026-02-14', amount: -112.40, account: 'Checking' },
-  { id: 't10', name: 'Spotify',             category: 'Spotify',    date: '2026-02-13', amount: -9.99,   account: 'Visa ••4521' },
-  { id: 't11', name: 'Amazon Order',        category: 'Shopping',   date: '2026-02-11', amount: -67.40,  account: 'Visa ••4521' },
-  { id: 't12', name: 'Doctor Visit',        category: 'Health',     date: '2026-02-08', amount: -45.00,  account: 'Checking' },
-  { id: 't13', name: 'Investment Dividend', category: 'Investment', date: '2026-02-05', amount:  142.50, account: 'Investment' },
-  { id: 't14', name: "Trader Joe's",        category: 'Groceries',  date: '2026-02-04', amount: -52.10,  account: 'Visa ••4521' },
-  { id: 't15', name: 'Gas Station',         category: 'Transport',  date: '2026-02-02', amount: -48.20,  account: 'Visa ••4521' },
-]
-
-const SEED_GOALS = [
-  { id: 'g1', name: 'Emergency Fund',     icon: 'Umbrella', target: 15000, current: 9840,  color: '#60a5fa', deadline: 'Jun 2026' },
-  { id: 'g2', name: 'Japan Trip',         icon: 'Plane',    target: 4500,  current: 2200,  color: '#f59e0b', deadline: 'Aug 2026' },
-  { id: 'g3', name: 'New Laptop',         icon: 'Laptop',   target: 2000,  current: 1650,  color: '#4ade80', deadline: 'Mar 2026' },
-  { id: 'g4', name: 'House Down Payment', icon: 'Home',     target: 40000, current: 11200, color: '#a78bfa', deadline: 'Dec 2027' },
-]
-
-const SEED_BILLS = [
-  { id: 'b1', name: 'Rent',          amount: 1450,  dueDay: 1,  category: 'Housing',      color: '#f87171', paid: true },
-  { id: 'b2', name: 'Electric',      amount: 112,   dueDay: 14, category: 'Utilities',    color: '#60a5fa', paid: true },
-  { id: 'b3', name: 'Internet',      amount: 59.99, dueDay: 18, category: 'Utilities',    color: '#60a5fa', paid: false },
-  { id: 'b4', name: 'Netflix',       amount: 15.99, dueDay: 23, category: 'Subscription', color: '#f87171', paid: true },
-  { id: 'b5', name: 'Spotify',       amount: 9.99,  dueDay: 13, category: 'Subscription', color: '#4ade80', paid: true },
-  { id: 'b6', name: 'Gym',           amount: 49.99, dueDay: 15, category: 'Health',       color: '#34d399', paid: true },
-  { id: 'b7', name: 'Phone Plan',    amount: 45,    dueDay: 28, category: 'Utilities',    color: '#a78bfa', paid: false },
-  { id: 'b8', name: 'Car Insurance', amount: 142,   dueDay: 5,  category: 'Insurance',    color: '#fbbf24', paid: false },
-]
-
-const SEED_ACCOUNTS = [
-  { id: 'a1', name: 'Checking Account', type: 'checking',   balance: 4820.50,  color: '#4ade80' },
-  { id: 'a2', name: 'Savings Account',  type: 'savings',    balance: 9840.00,  color: '#60a5fa' },
-  { id: 'a3', name: 'Visa ••4521',      type: 'credit',     balance: -1260.00, limit: 7000, color: '#f87171' },
-  { id: 'a4', name: 'Investment',       type: 'investment', balance: 8240.00,  color: '#a78bfa' },
-]
-
-const SEED_NOTIFICATIONS = [
-  { id: 'n1', title: 'Bill Due Tomorrow',    body: 'Internet bill of $59.99 is due on Feb 27.',         time: '2h ago', read: false, type: 'alert' },
-  { id: 'n2', title: 'Goal Almost Reached!', body: 'New Laptop goal is at 83% — only $350 to go!',      time: '1d ago', read: false, type: 'success' },
-  { id: 'n3', title: 'Large Transaction',    body: 'Rent payment of $1,450 was processed.',              time: '6d ago', read: true,  type: 'info' },
-  { id: 'n4', title: 'Monthly Summary Ready',body: 'Your February 2026 summary is available.',           time: '1w ago', read: true,  type: 'info' },
-]
-
-async function seedIfEmpty(): Promise<void> {
-  const seedMap: Record<string, object[]> = {
-    transactions: SEED_TRANSACTIONS,
-    goals: SEED_GOALS,
-    bills: SEED_BILLS,
-    accounts: SEED_ACCOUNTS,
-    notifications: SEED_NOTIFICATIONS,
-  }
-  for (const [name, seed] of Object.entries(seedMap)) {
-    const count = await col(name).countDocuments()
-    if (count === 0) await col(name).insertMany(seed)
-  }
-}
-
 async function initMongo(): Promise<void> {
   mongoClient = new MongoClient(MONGO_URI)
   await mongoClient.connect()
   db = mongoClient.db(DB_NAME)
-  await seedIfEmpty()
 }
 
 // ── IPC handlers ──────────────────────────────────────────────────────────────
@@ -172,6 +110,34 @@ function registerIpcHandlers(): void {
   ipcMain.handle('db:notifications:markAllRead', async () => {
     await col('notifications').updateMany({ read: false }, { $set: { read: true } })
     return null
+  })
+
+  // ── Auth / Users ──────────────────────────────────────────────────────────────
+  ipcMain.handle('auth:register', async (_e, name: string, email: string, password: string) => {
+    const users = col('users')
+    const existing = await users.findOne({ email })
+    if (existing) return { ok: false, error: 'Email already registered' }
+    const salt = randomBytes(16).toString('hex')
+    const hash = (await scryptAsync(password, salt, 64) as Buffer).toString('hex')
+    const id = `u_${Date.now()}`
+    await users.insertOne({ id, name, email, salt, hash })
+    return { ok: true, user: { id, name, email } }
+  })
+
+  ipcMain.handle('auth:login', async (_e, email: string, password: string) => {
+    const users = col('users')
+    const doc = await users.findOne({ email })
+    if (!doc) return { ok: false, error: 'Invalid email or password' }
+    const hashBuf = await scryptAsync(password, doc.salt as string, 64) as Buffer
+    const storedBuf = Buffer.from(doc.hash as string, 'hex')
+    const match = hashBuf.length === storedBuf.length && timingSafeEqual(hashBuf, storedBuf)
+    if (!match) return { ok: false, error: 'Invalid email or password' }
+    return { ok: true, user: { id: doc.id, name: doc.name, email: doc.email } }
+  })
+
+  ipcMain.handle('auth:userExists', async (_e, email: string) => {
+    const doc = await col('users').findOne({ email }, { projection: { _id: 0, id: 1 } })
+    return !!doc
   })
 
   // ── Auto-updater commands ─────────────────────────────────────────────────────

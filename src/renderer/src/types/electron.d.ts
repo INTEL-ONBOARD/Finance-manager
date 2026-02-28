@@ -8,6 +8,11 @@ declare global {
       platform: 'darwin' | 'win32' | 'linux';
       getVersion: () => Promise<string>;
       openExternal: (url: string) => Promise<void>;
+      auth: {
+        register: (name: string, email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; error?: string }>;
+        login: (email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; error?: string }>;
+        userExists: (email: string) => Promise<boolean>;
+      };
       store: {
         get: (key: string) => Promise<unknown>;
         set: (key: string, value: unknown) => Promise<void>;

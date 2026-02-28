@@ -9,8 +9,8 @@ interface User {
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
-    login: (email: string) => Promise<void>;
-    register: (name: string, email: string) => Promise<void>;
+    login: (email: string, password: string) => Promise<void>;
+    register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => void;
     loading: boolean;
 }
@@ -28,48 +28,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Load persisted auth on mount
         const savedUser = localStorage.getItem('finmate-auth-user');
         if (savedUser) {
             try {
                 setUser(JSON.parse(savedUser));
-            } catch (e) {
+            } catch {
                 localStorage.removeItem('finmate-auth-user');
             }
         }
         setLoading(false);
     }, []);
 
-    const login = async (email: string) => {
-        // Mock login mechanism
-        return new Promise<void>((resolve) => {
-            setTimeout(() => {
-                const mockUser: User = {
-                    id: `u_${Date.now()}`,
-                    name: email.split('@')[0],
-                    email,
-                };
-                setUser(mockUser);
-                localStorage.setItem('finmate-auth-user', JSON.stringify(mockUser));
-                resolve();
-            }, 800);
-        });
+    const login = async (email: string, password: string) => {
+        const result = await window.electron!.auth.login(email, password);
+        if (!result.ok) throw new Error(result.error ?? 'Login failed');
+        const u = result.user!;
+        setUser(u);
+        localStorage.setItem('finmate-auth-user', JSON.stringify(u));
     };
 
-    const register = async (name: string, email: string) => {
-        // Mock register mechanism
-        return new Promise<void>((resolve) => {
-            setTimeout(() => {
-                const mockUser: User = {
-                    id: `u_${Date.now()}`,
-                    name,
-                    email,
-                };
-                setUser(mockUser);
-                localStorage.setItem('finmate-auth-user', JSON.stringify(mockUser));
-                resolve();
-            }, 800);
-        });
+    const register = async (name: string, email: string, password: string) => {
+        const result = await window.electron!.auth.register(name, email, password);
+        if (!result.ok) throw new Error(result.error ?? 'Registration failed');
+        const u = result.user!;
+        setUser(u);
+        localStorage.setItem('finmate-auth-user', JSON.stringify(u));
     };
 
     const logout = () => {

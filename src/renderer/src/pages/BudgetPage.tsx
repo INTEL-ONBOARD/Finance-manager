@@ -27,8 +27,11 @@ const historicalData = [
 export default function BudgetPage() {
   const { transactions, monthlyIncome, monthlyExpenses, monthlySaved, savingsRate } = useFinance();
 
+  const currentMonthPrefix = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+  const currentMonthLabel  = new Date().toLocaleString('default', { month: 'short' }); // "Mar"
+
   const categoryBreakdown = useMemo(() => {
-    const expenses = transactions.filter(t => t.amount < 0 && t.date.startsWith('2026-02'));
+    const expenses = transactions.filter(t => t.amount < 0 && t.date.startsWith(currentMonthPrefix));
     const totals: Record<string, number> = {};
     expenses.forEach(t => { totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount); });
     return Object.entries(totals).map(([cat, spent]) => ({
@@ -37,9 +40,9 @@ export default function BudgetPage() {
       color: CATEGORY_COLORS[cat] || '#64748b',
       pct: BUDGET_LIMITS[cat] ? Math.round((spent / BUDGET_LIMITS[cat]) * 100) : null,
     })).sort((a, b) => b.spent - a.spent);
-  }, [transactions]);
+  }, [transactions, currentMonthPrefix]);
 
-  const chartData = [...historicalData, { month: 'Feb', income: Math.round(monthlyIncome), expenses: Math.round(monthlyExpenses) }];
+  const chartData = [...historicalData, { month: currentMonthLabel, income: Math.round(monthlyIncome), expenses: Math.round(monthlyExpenses) }];
 
   return (
     <AppShell>

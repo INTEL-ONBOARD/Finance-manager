@@ -12,15 +12,17 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         setLoading(true);
         try {
-            await register(name, email);
+            await register(name, email, password);
             navigate('/');
         } catch (err) {
-            console.error(err);
+            setError(err instanceof Error ? err.message : 'Registration failed');
         } finally {
             setLoading(false);
         }
@@ -170,6 +172,10 @@ export default function RegisterPage() {
                                 />
                             </div>
                         </div>
+
+                        {error && (
+                            <p style={{ color: '#f87171', fontSize: 13, textAlign: 'center', marginTop: -4 }}>{error}</p>
+                        )}
 
                         <motion.button
                             whileHover={{ scale: 1.01 }}

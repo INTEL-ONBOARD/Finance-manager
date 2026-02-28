@@ -30,7 +30,7 @@ export default function TransactionDetailModal({ transaction: txn, onClose }: Pr
   return (
     <AnimatePresence>
       {txn && (
-        <>
+        <div style={{ display: 'contents' }}>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
             onClick={onClose} />
@@ -89,7 +89,7 @@ export default function TransactionDetailModal({ transaction: txn, onClose }: Pr
               </button>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

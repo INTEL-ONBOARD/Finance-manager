@@ -15,7 +15,7 @@ const categoryColor: Record<string, string> = {
 
 export default function BillsPage() {
   const { bills, toggleBillPaid } = useFinance();
-  const today = 26;
+  const today = new Date().getDate();
 
   const paid   = bills.filter(b => b.paid);
   const unpaid = bills.filter(b => !b.paid);

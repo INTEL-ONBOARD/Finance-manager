@@ -12,6 +12,16 @@ contextBridge.exposeInMainWorld('electron', {
     delete: (key: string): Promise<void> => ipcRenderer.invoke('store:delete', key),
   },
 
+  // Auth / Users
+  auth: {
+    register: (name: string, email: string, password: string): Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; error?: string }> =>
+      ipcRenderer.invoke('auth:register', name, email, password),
+    login: (email: string, password: string): Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; error?: string }> =>
+      ipcRenderer.invoke('auth:login', email, password),
+    userExists: (email: string): Promise<boolean> =>
+      ipcRenderer.invoke('auth:userExists', email),
+  },
+
   // MongoDB-backed collections
   db: {
     transactions: {
