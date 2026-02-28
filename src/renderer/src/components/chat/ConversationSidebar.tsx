@@ -5,7 +5,7 @@ import ConversationItem from './ConversationItem';
 import NewDMModal from './NewDMModal';
 
 export default function ConversationSidebar() {
-  const { conversations, activeConversationId, unreadCounts, allUsers, openConversation, markConversationRead } = useChat();
+  const { conversations, activeConversationId, unreadCounts, allUsers, openConversation, markConversationRead, refreshUsers } = useChat();
   const [dmModalOpen, setDmModalOpen] = useState(false);
 
   // Group chat always first, then DMs sorted by lastMessageAt DESC
@@ -22,9 +22,8 @@ export default function ConversationSidebar() {
 
   function getConversationName(id: string): string {
     if (id === 'group') return 'Group Chat';
-    // Resolve DM peer name: dm_<id1>_<id2> with ids sorted ASC
-    const parts = id.replace(/^dm_/, '').split('_');
-    const peer = allUsers.find(u => parts.includes(u.id));
+    // IDs may contain underscores (e.g. u_123) so match directly instead of splitting
+    const peer = allUsers.find(u => id.includes(u.id));
     return peer?.name ?? 'Direct Message';
   }
 
@@ -45,7 +44,7 @@ export default function ConversationSidebar() {
       >
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Community</span>
         <button
-          onClick={() => setDmModalOpen(true)}
+          onClick={() => { setDmModalOpen(true); refreshUsers(); }}
           className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors"
           style={{ color: 'var(--text-muted)' }}
           title="New Direct Message"

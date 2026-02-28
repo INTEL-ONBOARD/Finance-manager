@@ -28,6 +28,7 @@ interface ChatContextType {
   sendMessage: (body: string) => void;
   loadOlderMessages: () => void;
   markConversationRead: (id: string) => void;
+  refreshUsers: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -59,7 +60,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const activeConversationIdRef = useRef<string | null>(null);
   activeConversationIdRef.current = activeConversationId;
 
-  // Load sidebar conversations + all users on mount
+  // Load sidebar conversations + all users on mount; auto-watch all known conversations
   useEffect(() => {
     const el = window.electron?.chat;
     if (!user || !el) return;
@@ -70,10 +71,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ? convos
         : [GROUP_STUB, ...convos];
       setConversations(entries);
+      // Watch all known conversations so incoming messages are received even without opening them
+      const allIds = [...new Set([...entries.map(c => c.id), 'group'])];
+      for (const id of allIds) {
+        el.watchConversation(id).catch(() => {});
+        watchedIdsRef.current.add(id);
+      }
     }).catch(() => {
-      // Keep the group stub already in state
+      // Keep the group stub already in state; still watch group
+      el.watchConversation('group').catch(() => {});
+      watchedIdsRef.current.add('group');
     });
-    el.listUsers(user.id).then(users => setAllUsers(users)).catch(() => {});
+    el.listUsers(user.id).then(users => {
+      setAllUsers(users);
+      // Pre-watch all possible DM conversations so first-ever messages are received
+      for (const other of users) {
+        const dmId = `dm_${[user.id, other.id].sort().join('_')}`;
+        if (!watchedIdsRef.current.has(dmId)) {
+          el.watchConversation(dmId).catch(() => {});
+          watchedIdsRef.current.add(dmId);
+        }
+      }
+    }).catch(() => {});
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ref keeps addNotification accessible in the onMessage closure without re-registering
@@ -124,20 +143,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Switch active conversation
   const openConversation = useCallback(async (id: string) => {
     const el = window.electron?.chat;
-    // Unwatch previous
-    if (el && activeConversationIdRef.current && activeConversationIdRef.current !== id) {
-      await el.unwatchConversation(activeConversationIdRef.current).catch(() => {});
-    }
     setActiveConversationId(id);
     setMessages([]);
     setHasMore(false);
     if (!el) return;
-    // Fetch initial messages + start watch
+    // Fetch initial messages; start watch only if not already watching
     try {
       const msgs = await el.fetchMessages(id, PAGE_SIZE);
       setMessages(msgs);
       setHasMore(msgs.length === PAGE_SIZE);
-      await el.watchConversation(id);
+      if (!watchedIdsRef.current.has(id)) {
+        await el.watchConversation(id);
+        watchedIdsRef.current.add(id);
+      }
     } catch {
       // Silently ignore — user sees empty thread
     }
@@ -185,12 +203,32 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setUnreadCounts(prev => ({ ...prev, [id]: 0 }));
   }, []);
 
-  // Cleanup on unmount — unwatch active stream
+  const refreshUsers = useCallback(() => {
+    const el = window.electron?.chat;
+    if (!user || !el) return;
+    el.listUsers(user.id).then(users => {
+      setAllUsers(users);
+      // Watch any new DM conversations not yet watched
+      for (const other of users) {
+        const dmId = `dm_${[user.id, other.id].sort().join('_')}`;
+        if (!watchedIdsRef.current.has(dmId)) {
+          el.watchConversation(dmId).catch(() => {});
+          watchedIdsRef.current.add(dmId);
+        }
+      }
+    }).catch(() => {});
+  }, [user]);
+
+  // Track all watched conversation IDs for cleanup
+  const watchedIdsRef = useRef<Set<string>>(new Set());
+
+  // Cleanup on unmount — unwatch all streams
   useEffect(() => {
     return () => {
       const el = window.electron?.chat;
-      if (el && activeConversationIdRef.current) {
-        el.unwatchConversation(activeConversationIdRef.current).catch(() => {});
+      if (!el) return;
+      for (const id of watchedIdsRef.current) {
+        el.unwatchConversation(id).catch(() => {});
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -199,7 +237,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     <ChatContext.Provider value={{
       conversations, activeConversationId, unreadCounts, allUsers,
       messages, hasMore,
-      openConversation, openDM, sendMessage, loadOlderMessages, markConversationRead,
+      openConversation, openDM, sendMessage, loadOlderMessages, markConversationRead, refreshUsers,
     }}>
       {children}
     </ChatContext.Provider>

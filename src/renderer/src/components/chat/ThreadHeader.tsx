@@ -11,9 +11,8 @@ export default function ThreadHeader() {
   let name = 'Group Chat';
   let subtitle = 'Everyone in Finwise';
   if (!isGroup) {
-    // Extract peer user id from dm_<id1>_<id2>
-    const parts = activeConversationId.replace('dm_', '').split('_');
-    const peer = allUsers.find(u => parts.includes(u.id));
+    // Extract peer user id from dm_<id1>_<id2> — IDs may contain underscores so match directly
+    const peer = allUsers.find(u => activeConversationId.includes(u.id));
     name = peer?.name ?? 'Direct Message';
     subtitle = 'Direct Message';
   }
