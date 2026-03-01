@@ -2,7 +2,18 @@ import Avatar from './Avatar';
 
 function isOnline(lastActiveAt?: string | null): boolean {
   if (!lastActiveAt) return false;
-  return Date.now() - new Date(lastActiveAt).getTime() < 5 * 60 * 1000;
+  return Date.now() - new Date(lastActiveAt).getTime() < 10 * 60 * 1000; // 10 min window
+}
+
+function lastSeenLabel(lastActiveAt?: string | null): string | null {
+  if (!lastActiveAt) return null;
+  const diff = Date.now() - new Date(lastActiveAt).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 10) return null; // online — don't show "last seen"
+  if (mins < 60) return `Active ${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `Active ${hrs}h ago`;
+  return `Active ${Math.floor(hrs / 24)}d ago`;
 }
 
 interface ConversationItemProps {
@@ -33,6 +44,7 @@ export default function ConversationItem({
 }: ConversationItemProps) {
   const isGroup = id === 'group';
   const online = !isGroup && isOnline(lastActiveAt);
+  const seenLabel = !isGroup && !online ? lastSeenLabel(lastActiveAt) : null;
 
   return (
     <button
@@ -78,8 +90,8 @@ export default function ConversationItem({
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }} className="truncate">
-            {lastMessage || (isGroup ? 'Group chat' : 'No messages yet')}
+          <span style={{ fontSize: 12, color: online ? '#22c55e' : 'var(--text-muted)' }} className="truncate">
+            {online ? 'Online' : (lastMessage || seenLabel || (isGroup ? 'Group chat' : 'No messages yet'))}
           </span>
           {unread > 0 && (
             <span

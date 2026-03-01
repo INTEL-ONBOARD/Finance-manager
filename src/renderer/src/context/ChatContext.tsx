@@ -224,7 +224,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const el = window.electron?.chat;
     if (!user?.sessionId || !el) return;
     const sessionId = user.sessionId;
-    el.presencePing(sessionId).catch(() => {});
+    // Ping immediately, then refresh user list 1s later so the dot shows right away
+    el.presencePing(sessionId)
+      .then(() => {
+        setTimeout(() => {
+          el.listUsers(userRef.current!.id).then(setAllUsers).catch(() => {});
+        }, 1000);
+      })
+      .catch(() => {});
     const interval = setInterval(() => {
       el.presencePing(sessionId).catch(() => {});
     }, 30_000);
