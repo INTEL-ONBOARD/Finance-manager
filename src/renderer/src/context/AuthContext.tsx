@@ -5,6 +5,7 @@ interface User {
     name: string;
     email: string;
     sessionId?: string;
+    avatar?: string;
 }
 
 interface AuthContextType {
@@ -14,7 +15,7 @@ interface AuthContextType {
     register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => void;
     loading: boolean;
-    updateUser: (updates: Partial<Pick<User, 'name' | 'email'>>) => void;
+    updateUser: (updates: Partial<Pick<User, 'name' | 'email' | 'avatar'>>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -62,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('finmate-auth-user');
     };
 
-    const updateUser = (updates: Partial<Pick<User, 'name' | 'email'>>) => {
+    const updateUser = (updates: Partial<Pick<User, 'name' | 'email' | 'avatar'>>) => {
         setUser(prev => {
             if (!prev) return prev;
             const updated = { ...prev, ...updates };

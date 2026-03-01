@@ -14,6 +14,7 @@ interface UserSettings {
     monthlyReport: boolean;
     weeklyDigest: boolean;
   };
+  avatar?: string;
 }
 
 interface Session {
@@ -40,6 +41,9 @@ declare global {
         get: (key: string) => Promise<unknown>;
         set: (key: string, value: unknown) => Promise<void>;
         delete: (key: string) => Promise<void>;
+      };
+      dialog: {
+        openImage: () => Promise<string | null>;
       };
       db: {
         transactions: {
@@ -79,6 +83,11 @@ declare global {
         sessions: {
           list: (userId: string) => Promise<Session[]>;
           revoke: (userId: string, sessionId: string) => Promise<void>;
+        };
+        user: {
+          avatar: {
+            save: (userId: string, filePath: string) => Promise<{ ok: boolean; avatar?: string; error?: string }>;
+          };
         };
       };
       updater: {
