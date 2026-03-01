@@ -1,10 +1,15 @@
 import { ArrowLeftRight, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const dotBg = {
+    backgroundImage: 'radial-gradient(var(--text-primary) 1px, transparent 1px)',
+    backgroundSize: '16px 16px',
+};
+
 export default function ExchangesPage() {
     return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 relative">
-                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(var(--text-primary) 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+                <div className="absolute inset-0 opacity-[0.04]" style={dotBg} />
 
                 <div className="relative z-10 flex flex-col items-center">
                     <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-[#84cc16] mb-6 relative" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
