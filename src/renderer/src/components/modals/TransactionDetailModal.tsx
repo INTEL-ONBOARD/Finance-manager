@@ -97,13 +97,14 @@ export default function TransactionDetailModal({ transaction: txn, onClose }: Pr
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
             onClick={onClose} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-1/2 left-1/2 z-50 w-full max-w-sm rounded-2xl p-6"
-            style={{ transform: 'translate(-50%,-50%)', background: 'var(--bg-modal)', border: '1px solid var(--border-light)', boxShadow: '0 32px 64px rgba(0,0,0,0.4)' }}
+            className="w-full max-w-sm rounded-2xl p-6 pointer-events-auto"
+            style={{ background: 'var(--bg-modal)', border: '1px solid var(--border-light)', boxShadow: '0 32px 64px rgba(0,0,0,0.4)' }}
           >
             <div className="flex items-center justify-between mb-5">
               <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
@@ -227,6 +228,7 @@ export default function TransactionDetailModal({ transaction: txn, onClose }: Pr
               )}
             </div>
           </motion.div>
+          </div>
         </div>
       )}
     </AnimatePresence>

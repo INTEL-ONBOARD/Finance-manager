@@ -131,7 +131,7 @@ function buildNotifications(
   const results: Array<Omit<Notification, 'read'>> = [];
   const now = new Date();
   const todayDay = now.getDate();
-  const ym = now.toISOString().slice(0, 7);
+  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   for (const bill of bills) {
     if (bill.paid) continue;
@@ -217,7 +217,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
   const [currency, setCurrency] = useState<string>('USD');
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [dbError, setDbError] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`; });
 
   // Re-hydrate whenever the logged-in user changes
   useEffect(() => {

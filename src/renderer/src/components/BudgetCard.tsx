@@ -35,7 +35,8 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default function BudgetCard() {
   const { monthlyIncome, monthlyExpenses, monthlySaved, savingsRate, currency, bills, transactions, selectedMonth } = useFinance();
-  const currentMonth = new Date().toLocaleDateString('en-US', { month: 'short' });
+  const [selY, selM] = selectedMonth.split('-').map(Number);
+  const currentMonth = new Date(selY, selM - 1, 1).toLocaleDateString('en-US', { month: 'short' });
   const today = new Date().getDate();
 
   // Upcoming bills — unpaid, sorted by due day, show up to 3
@@ -113,7 +114,7 @@ export default function BudgetCard() {
             Monthly Budget
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginTop: 2, letterSpacing: '-0.01em' }}>
-            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            {new Date(selY, selM - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </div>
         </div>
         <Link to="/budget"

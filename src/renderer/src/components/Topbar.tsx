@@ -52,14 +52,15 @@ function MonthNavigator() {
 
   const prev = () => {
     const d = new Date(y, m - 2, 1);
-    setSelectedMonth(d.toISOString().slice(0, 7));
+    setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   };
   const next = () => {
     const d = new Date(y, m, 1);
-    setSelectedMonth(d.toISOString().slice(0, 7));
+    setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   };
 
-  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const isCurrentMonth = selectedMonth === currentMonthStr;
   const isFutureMonth = selectedMonth > currentMonthStr;
 
