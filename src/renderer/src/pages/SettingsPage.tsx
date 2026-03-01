@@ -347,6 +347,9 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+                {avatarError && (
+                  <p className="mt-2 text-xs" style={{ color: '#f87171' }}>{avatarError}</p>
+                )}
 
                 {/* Form card */}
                 <div className="card p-6 flex flex-col gap-5">
