@@ -4,6 +4,7 @@ import { MongoClient, Db, Collection, ChangeStream } from 'mongodb'
 import { autoUpdater } from 'electron-updater'
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto'
 import { promisify } from 'util'
+import { readFileSync, statSync } from 'fs'
 
 const scryptAsync = promisify(scrypt)
 
@@ -222,18 +223,28 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('db:user:avatar:save', async (_e, userId: string, filePath: string) => {
-    const { readFileSync, statSync } = require('fs') as typeof import('fs')
-    const stat = statSync(filePath)
-    if (stat.size > 2 * 1024 * 1024) {
-      return { ok: false, error: 'Image must be under 2MB' }
+    const allowedExts = ['jpg', 'jpeg', 'png', 'webp']
+    const ext = filePath.split('.').pop()?.toLowerCase() ?? ''
+    if (!allowedExts.includes(ext)) {
+      return { ok: false, error: 'Unsupported image format' }
     }
-    const ext = filePath.split('.').pop()?.toLowerCase() ?? 'jpeg'
-    const mimeMap: Record<string, string> = { jpg: 'jpeg', jpeg: 'jpeg', png: 'png', webp: 'webp', gif: 'gif' }
-    const mime = mimeMap[ext] ?? 'jpeg'
-    const data = readFileSync(filePath)
-    const avatar = `data:image/${mime};base64,${data.toString('base64')}`
-    await col('users').updateOne({ id: userId }, { $set: { avatar } }, { upsert: false })
-    return { ok: true, avatar }
+    try {
+      const stat = statSync(filePath)
+      if (stat.size > 2 * 1024 * 1024) {
+        return { ok: false, error: 'Image must be under 2MB' }
+      }
+      const mimeMap: Record<string, string> = { jpg: 'jpeg', jpeg: 'jpeg', png: 'png', webp: 'webp' }
+      const mime = mimeMap[ext]
+      const data = readFileSync(filePath)
+      const avatar = `data:image/${mime};base64,${data.toString('base64')}`
+      const result = await col('users').updateOne({ id: userId }, { $set: { avatar } }, { upsert: false })
+      if (result.matchedCount === 0) {
+        return { ok: false, error: 'User not found' }
+      }
+      return { ok: true, avatar }
+    } catch {
+      return { ok: false, error: 'Failed to read image file' }
+    }
   })
 
   // ── Change Password ───────────────────────────────────────────────────────────
