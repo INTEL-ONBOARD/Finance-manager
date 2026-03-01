@@ -2,6 +2,28 @@ export {};
 
 import type { Transaction, SavingsGoal, Bill, Account, Notification } from '@/context/FinanceContext';
 
+interface UserSettings {
+  name?: string;
+  email?: string;
+  currency?: string;
+  timezone?: string;
+  notifs?: {
+    billReminders: boolean;
+    goalProgress: boolean;
+    largeTransactions: boolean;
+    monthlyReport: boolean;
+    weeklyDigest: boolean;
+  };
+}
+
+interface Session {
+  sessionId: string;
+  userId: string;
+  deviceLabel: string;
+  createdAt: string;
+  lastActiveAt: string;
+}
+
 declare global {
   interface Window {
     electron?: {
@@ -9,9 +31,10 @@ declare global {
       getVersion: () => Promise<string>;
       openExternal: (url: string) => Promise<void>;
       auth: {
-        register: (name: string, email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; error?: string }>;
-        login: (email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; error?: string }>;
+        register: (name: string, email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; sessionId?: string; error?: string }>;
+        login: (email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; sessionId?: string; error?: string }>;
         userExists: (email: string) => Promise<boolean>;
+        changePassword: (userId: string, oldPassword: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
       };
       store: {
         get: (key: string) => Promise<unknown>;
@@ -33,9 +56,14 @@ declare global {
         bills: {
           getAll: (userId: string) => Promise<Bill[]>;
           togglePaid: (userId: string, id: string) => Promise<void>;
+          add: (userId: string, doc: Omit<Bill, 'id'>) => Promise<void>;
+          delete: (userId: string, id: string) => Promise<void>;
         };
         accounts: {
           getAll: (userId: string) => Promise<Account[]>;
+          add: (userId: string, doc: Omit<Account, 'id'>) => Promise<void>;
+          update: (userId: string, id: string, updates: Partial<Account>) => Promise<void>;
+          delete: (userId: string, id: string) => Promise<void>;
         };
         notifications: {
           getAll: (userId: string) => Promise<Notification[]>;
@@ -44,6 +72,14 @@ declare global {
           add: (userId: string, doc: Notification) => Promise<void>;
         };
         clearUserData: (userId: string) => Promise<void>;
+        settings: {
+          get: (userId: string) => Promise<UserSettings | null>;
+          save: (userId: string, settings: UserSettings) => Promise<void>;
+        };
+        sessions: {
+          list: (userId: string) => Promise<Session[]>;
+          revoke: (userId: string, sessionId: string) => Promise<void>;
+        };
       };
       updater: {
         check:          () => Promise<void>;

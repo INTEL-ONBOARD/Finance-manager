@@ -4,6 +4,7 @@ interface User {
     id: string;
     name: string;
     email: string;
+    sessionId?: string;
 }
 
 interface AuthContextType {
@@ -13,6 +14,7 @@ interface AuthContextType {
     register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => void;
     loading: boolean;
+    updateUser: (updates: Partial<Pick<User, 'name' | 'email'>>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -42,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (email: string, password: string) => {
         const result = await window.electron!.auth.login(email, password);
         if (!result.ok) throw new Error(result.error ?? 'Login failed');
-        const u = result.user!;
+        const u = { ...result.user!, sessionId: result.sessionId };
         setUser(u);
         localStorage.setItem('finmate-auth-user', JSON.stringify(u));
     };
@@ -50,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const register = async (name: string, email: string, password: string) => {
         const result = await window.electron!.auth.register(name, email, password);
         if (!result.ok) throw new Error(result.error ?? 'Registration failed');
-        const u = result.user!;
+        const u = { ...result.user!, sessionId: result.sessionId };
         setUser(u);
         localStorage.setItem('finmate-auth-user', JSON.stringify(u));
     };
@@ -60,6 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('finmate-auth-user');
     };
 
+    const updateUser = (updates: Partial<Pick<User, 'name' | 'email'>>) => {
+        setUser(prev => {
+            if (!prev) return prev;
+            const updated = { ...prev, ...updates };
+            localStorage.setItem('finmate-auth-user', JSON.stringify(updated));
+            return updated;
+        });
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -67,7 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             login,
             register,
             logout,
-            loading
+            loading,
+            updateUser,
         }}>
             {children}
         </AuthContext.Provider>

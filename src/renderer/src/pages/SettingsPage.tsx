@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Bell, Shield, CreditCard, Crown, Check, ChevronRight,
   Camera, Lock, Smartphone, Trash2, Zap, BarChart3, Target, Receipt,
   RefreshCw, Download, CheckCircle, AlertCircle, ArrowUpCircle,
+  Monitor, Eye, EyeOff, Clock,
 } from 'lucide-react';
 import AppShell from '@/components/AppShell';
 
@@ -20,21 +21,73 @@ const sections = [
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'LKR', 'AUD', 'CAD', 'JPY', 'SGD'];
 const TIMEZONES  = ['Asia/Colombo', 'America/New_York', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Australia/Sydney', 'Asia/Tokyo'];
 
+interface Session {
+  sessionId: string;
+  userId: string;
+  deviceLabel: string;
+  createdAt: string;
+  lastActiveAt: string;
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [active, setActive] = useState('profile');
-  const [saved, setSaved]   = useState(false);
-  const [clearConfirm, setClearConfirm] = useState(false);
-  const [clearing, setClearing] = useState(false);
-  const [clearDone, setClearDone] = useState(false);
+
+  // Profile
   const [profile, setProfile] = useState({
-    name: 'K. Wenuja', email: 'kwenuja@email.com', currency: 'USD', timezone: 'Asia/Colombo',
+    name: user?.name ?? '', email: user?.email ?? '', currency: 'USD', timezone: 'Asia/Colombo',
   });
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  // Notifications
   const [notifs, setNotifs] = useState({
     billReminders: true, goalProgress: true, largeTransactions: true,
     monthlyReport: true, weeklyDigest: false,
   });
+  const notifSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Cleanup notifSaveTimer on unmount
+  useEffect(() => {
+    return () => { if (notifSaveTimer.current) clearTimeout(notifSaveTimer.current); };
+  }, []);
+
+  // Security — change password
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [pwForm, setPwForm] = useState({ old: '', newPw: '', confirm: '' });
+  const [showPw, setShowPw] = useState({ old: false, newPw: false, confirm: false });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwDone, setPwDone] = useState(false);
+
+  // Security — sessions
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  // Security — danger zone
+  const [clearConfirm, setClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearDone, setClearDone] = useState(false);
+
+  // Updates
   type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error' | 'up-to-date';
   const [updateStatus,     setUpdateStatus]     = useState<UpdateStatus>('idle');
   const [updateInfo,       setUpdateInfo]       = useState<{ version: string; releaseNotes: string | null } | null>(null);
@@ -42,6 +95,46 @@ export default function SettingsPage() {
   const [updateError,      setUpdateError]      = useState('');
   const [appVersion,       setAppVersion]       = useState('');
 
+  // ── Load settings on mount ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setProfileLoading(true);
+    const p = window.electron?.db.settings?.get(user.id);
+    if (p) {
+      p.then(s => {
+        if (cancelled) return;
+        if (s) {
+          setProfile({
+            name:     (s as { name?: string }).name     ?? user.name,
+            email:    (s as { email?: string }).email   ?? user.email,
+            currency: (s as { currency?: string }).currency ?? 'USD',
+            timezone: (s as { timezone?: string }).timezone ?? 'Asia/Colombo',
+          });
+          const n = (s as { notifs?: typeof notifs }).notifs;
+          if (n) setNotifs(n);
+        }
+      }).finally(() => { if (!cancelled) setProfileLoading(false); });
+    } else {
+      setProfileLoading(false);
+    }
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  // ── Load sessions when on security tab ───────────────────────────────────────
+  useEffect(() => {
+    if (active !== 'security' || !user) return;
+    setSessionsLoading(true);
+    const sp = window.electron?.db.sessions?.list(user.id);
+    if (sp) {
+      sp.then(list => setSessions((list ?? []) as Session[]))
+        .finally(() => setSessionsLoading(false));
+    } else {
+      setSessionsLoading(false);
+    }
+  }, [active, user?.id]);
+
+  // ── Updater listeners ─────────────────────────────────────────────────────────
   useEffect(() => {
     window.electron?.getVersion().then(setAppVersion);
     if (!window.electron?.updater) return;
@@ -56,6 +149,60 @@ export default function SettingsPage() {
     return () => cleanups.forEach(fn => fn());
   }, []);
 
+  // ── Handlers ──────────────────────────────────────────────────────────────────
+  const handleSave = async () => {
+    if (!user) return;
+    setSaveError('');
+    const settings = { name: profile.name, email: profile.email, currency: profile.currency, timezone: profile.timezone, notifs };
+    try {
+      await window.electron?.db.settings?.save(user.id, settings);
+      updateUser({ name: profile.name, email: profile.email });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2200);
+    } catch {
+      setSaveError('Failed to save. Please try again.');
+    }
+  };
+
+  const handleToggle = (key: keyof typeof notifs) => {
+    const updated = { ...notifs, [key]: !notifs[key] };
+    setNotifs(updated);
+    if (!user) return;
+    if (notifSaveTimer.current) clearTimeout(notifSaveTimer.current);
+    const userId = user.id;
+    notifSaveTimer.current = setTimeout(() => {
+      // Use profileRef to always capture the latest profile at save time
+      const p = profileRef.current;
+      window.electron?.db.settings?.save(userId, {
+        name: p.name, email: p.email, currency: p.currency, timezone: p.timezone, notifs: updated,
+      });
+    }, 500);
+  };
+
+  const handleChangePassword = async () => {
+    setPwError('');
+    if (pwForm.newPw.length < 8) { setPwError('New password must be at least 8 characters'); return; }
+    if (pwForm.newPw !== pwForm.confirm) { setPwError('Passwords do not match'); return; }
+    if (pwForm.newPw === pwForm.old) { setPwError('New password must differ from current password'); return; }
+    setPwSaving(true);
+    try {
+      const result = await window.electron?.auth.changePassword(user!.id, pwForm.old, pwForm.newPw);
+      if (!result?.ok) { setPwError(result?.error ?? 'Failed to change password'); return; }
+      setPwDone(true);
+      setPwForm({ old: '', newPw: '', confirm: '' });
+      setShowChangePw(false);
+      setTimeout(() => setPwDone(false), 3000);
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  const handleRevokeSession = async (sessionId: string) => {
+    if (!user) return;
+    await window.electron?.db.sessions?.revoke(user.id, sessionId);
+    setSessions(prev => prev.filter(s => s.sessionId !== sessionId));
+  };
+
   const handleClearData = async () => {
     if (!clearConfirm) { setClearConfirm(true); return; }
     setClearing(true);
@@ -68,14 +215,6 @@ export default function SettingsPage() {
       setClearConfirm(false);
     }
   };
-
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2200);
-  };
-
-  const toggle = (key: keyof typeof notifs) =>
-    setNotifs(n => ({ ...n, [key]: !n[key] }));
 
   return (
     <AppShell>
@@ -155,7 +294,7 @@ export default function SettingsPage() {
                     <div className="relative">
                       <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-bold shrink-0"
                         style={{ background: 'linear-gradient(135deg, rgba(74,222,128,0.3), rgba(96,165,250,0.3))', border: '2px solid rgba(74,222,128,0.3)', color: 'var(--accent-brand)' }}>
-                        KW
+                        {profile.name ? profile.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'U'}
                       </div>
                       <button className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl flex items-center justify-center"
                         style={{ background: 'var(--accent-brand)', color: '#0d1117' }}>
@@ -163,8 +302,8 @@ export default function SettingsPage() {
                       </button>
                     </div>
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{profile.name}</div>
-                      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{profile.email}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{profile.name || user?.name}</div>
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{profile.email || user?.email}</div>
                       <div className="flex items-center gap-1.5 mt-2">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
                           style={{ background: 'var(--accent-brand-dim)', color: 'var(--accent-brand)', border: '1px solid rgba(74,222,128,0.25)' }}>
@@ -183,52 +322,63 @@ export default function SettingsPage() {
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Update your name, email and regional preferences.</div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { label: 'Full Name',      key: 'name',     placeholder: 'Your name' },
-                      { label: 'Email Address',  key: 'email',    placeholder: 'you@email.com' },
-                    ].map(f => (
-                      <div key={f.key}>
-                        <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{f.label}</label>
-                        <input
-                          value={profile[f.key as keyof typeof profile]}
-                          onChange={e => setProfile(p => ({ ...p, [f.key]: e.target.value }))}
-                          placeholder={f.placeholder}
-                          className="w-full mt-1.5 px-3 py-2.5 rounded-xl outline-none transition-colors"
-                          style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13 }} />
+                  {profileLoading ? (
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Loading…</div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        {[
+                          { label: 'Full Name',      key: 'name',     placeholder: 'Your name' },
+                          { label: 'Email Address',  key: 'email',    placeholder: 'you@email.com' },
+                        ].map(f => (
+                          <div key={f.key}>
+                            <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{f.label}</label>
+                            <input
+                              value={profile[f.key as keyof typeof profile]}
+                              onChange={e => setProfile(p => ({ ...p, [f.key]: e.target.value }))}
+                              placeholder={f.placeholder}
+                              className="w-full mt-1.5 px-3 py-2.5 rounded-xl outline-none transition-colors"
+                              style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13 }} />
+                          </div>
+                        ))}
+
+                        <div>
+                          <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Currency</label>
+                          <select value={profile.currency} onChange={e => setProfile(p => ({ ...p, currency: e.target.value }))}
+                            className="w-full mt-1.5 px-3 py-2.5 rounded-xl outline-none"
+                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13 }}>
+                            {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Timezone</label>
+                          <select value={profile.timezone} onChange={e => setProfile(p => ({ ...p, timezone: e.target.value }))}
+                            className="w-full mt-1.5 px-3 py-2.5 rounded-xl outline-none"
+                            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13 }}>
+                            {TIMEZONES.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
                       </div>
-                    ))}
 
-                    <div>
-                      <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Currency</label>
-                      <select value={profile.currency} onChange={e => setProfile(p => ({ ...p, currency: e.target.value }))}
-                        className="w-full mt-1.5 px-3 py-2.5 rounded-xl outline-none"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13 }}>
-                        {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Timezone</label>
-                      <select value={profile.timezone} onChange={e => setProfile(p => ({ ...p, timezone: e.target.value }))}
-                        className="w-full mt-1.5 px-3 py-2.5 rounded-xl outline-none"
-                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13 }}>
-                        {TIMEZONES.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-3 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-                    <button onClick={handleSave}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                      style={{
-                        background: saved ? 'rgba(34,197,94,0.12)' : 'var(--accent-brand)',
-                        color: saved ? 'var(--accent-green)' : '#0d1117',
-                        border: saved ? '1px solid rgba(34,197,94,0.3)' : 'none',
-                      }}>
-                      {saved ? <><Check size={13} /> Saved</> : 'Save Changes'}
-                    </button>
-                  </div>
+                      <div className="flex items-center justify-end gap-3 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+                        {saveError && (
+                          <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--accent-red)' }}>
+                            <AlertCircle size={12} /> {saveError}
+                          </span>
+                        )}
+                        <button onClick={handleSave}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                          style={{
+                            background: saved ? 'rgba(34,197,94,0.12)' : 'var(--accent-brand)',
+                            color: saved ? 'var(--accent-green)' : '#0d1117',
+                            border: saved ? '1px solid rgba(34,197,94,0.3)' : 'none',
+                          }}>
+                          {saved ? <><Check size={13} /> Saved</> : 'Save Changes'}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -246,11 +396,11 @@ export default function SettingsPage() {
 
                 <div className="flex flex-col">
                   {[
-                    { key: 'billReminders',     label: 'Bill Reminders',     desc: 'Get notified 3 days before a bill is due',       icon: Receipt },
+                    { key: 'billReminders',     label: 'Bill Reminders',     desc: 'Get notified 3 days before a bill is due',          icon: Receipt },
                     { key: 'goalProgress',      label: 'Goal Milestones',    desc: 'Alerts when you hit 25%, 50%, 75%, 100% of a goal', icon: Target },
-                    { key: 'largeTransactions', label: 'Large Transactions', desc: 'Alerts for any single transaction over $200',    icon: CreditCard },
-                    { key: 'monthlyReport',     label: 'Monthly Summary',    desc: 'Your full finance report at the end of each month', icon: BarChart3 },
-                    { key: 'weeklyDigest',      label: 'Weekly Digest',      desc: 'A brief weekly snapshot of income and spend',    icon: Zap },
+                    { key: 'largeTransactions', label: 'Large Transactions', desc: 'Alerts for any single transaction over $200',        icon: CreditCard },
+                    { key: 'monthlyReport',     label: 'Monthly Summary',    desc: 'Your full finance report at the end of each month',  icon: BarChart3 },
+                    { key: 'weeklyDigest',      label: 'Weekly Digest',      desc: 'A brief weekly snapshot of income and spend',        icon: Zap },
                   ].map((item, i) => {
                     const on = notifs[item.key as keyof typeof notifs];
                     return (
@@ -269,7 +419,7 @@ export default function SettingsPage() {
                             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{item.desc}</div>
                           </div>
                         </div>
-                        <button onClick={() => toggle(item.key as keyof typeof notifs)}
+                        <button onClick={() => handleToggle(item.key as keyof typeof notifs)}
                           className="relative shrink-0 transition-all duration-200"
                           style={{ width: 40, height: 22, borderRadius: 11, background: on ? 'var(--accent-brand)' : 'var(--bg-card-hover)', border: '1px solid var(--border-light)' }}>
                           <motion.div
@@ -296,27 +446,168 @@ export default function SettingsPage() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Security Settings</div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Manage your account security and access.</div>
 
-                  {[
-                    { icon: Lock,        label: 'Change Password',            desc: 'Update your account password',            danger: false },
-                    { icon: Smartphone,  label: 'Two-Factor Authentication',  desc: 'Add an extra layer of account security',  danger: false },
-                    { icon: Shield,      label: 'Active Sessions',            desc: 'View and manage active login sessions',   danger: false },
-                  ].map((item, i) => (
-                    <motion.button key={item.label}
-                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.05 + i * 0.05 }}
-                      className="flex items-center gap-4 p-4 rounded-2xl text-left transition-all w-full group"
-                      style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
+                  {/* Change Password */}
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                    className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
+                    <button
+                      onClick={() => { setShowChangePw(v => !v); setPwError(''); setPwDone(false); }}
+                      className="flex items-center gap-4 p-4 text-left w-full group">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
-                        <item.icon size={16} style={{ color: 'var(--text-muted)' }} />
+                        <Lock size={16} style={{ color: pwDone ? 'var(--accent-brand)' : 'var(--text-muted)' }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{item.label}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{item.desc}</div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>Change Password</div>
+                        <div style={{ fontSize: 11, color: pwDone ? 'var(--accent-brand)' : 'var(--text-muted)', marginTop: 2 }}>
+                          {pwDone ? 'Password updated successfully' : 'Update your account password'}
+                        </div>
                       </div>
-                      <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
-                    </motion.button>
-                  ))}
+                      <motion.div animate={{ rotate: showChangePw ? 90 : 0 }} transition={{ duration: 0.15 }}>
+                        <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
+                      </motion.div>
+                    </button>
+
+                    <AnimatePresence>
+                      {showChangePw && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
+                          style={{ borderTop: '1px solid var(--border)' }}>
+                          <div className="p-4 flex flex-col gap-3">
+                            {[
+                              { label: 'Current Password', key: 'old',     show: showPw.old },
+                              { label: 'New Password',     key: 'newPw',   show: showPw.newPw },
+                              { label: 'Confirm New',      key: 'confirm', show: showPw.confirm },
+                            ].map(f => (
+                              <div key={f.key}>
+                                <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{f.label}</label>
+                                <div className="relative mt-1.5">
+                                  <input
+                                    type={f.show ? 'text' : 'password'}
+                                    value={pwForm[f.key as keyof typeof pwForm]}
+                                    onChange={e => setPwForm(p => ({ ...p, [f.key]: e.target.value }))}
+                                    className="w-full px-3 py-2.5 rounded-xl outline-none pr-10"
+                                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13 }} />
+                                  <button type="button"
+                                    onClick={() => setShowPw(p => ({ ...p, [f.key]: !p[f.key as keyof typeof p] }))}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                                    style={{ color: 'var(--text-muted)' }}>
+                                    {f.show ? <EyeOff size={13} /> : <Eye size={13} />}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+
+                            {pwError && (
+                              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--accent-red)' }}>
+                                <AlertCircle size={12} /> {pwError}
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                              <button onClick={() => { setShowChangePw(false); setPwError(''); setPwForm({ old: '', newPw: '', confirm: '' }); }}
+                                className="px-4 py-2 rounded-xl text-xs font-medium"
+                                style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                                Cancel
+                              </button>
+                              <button onClick={handleChangePassword} disabled={pwSaving}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:brightness-110"
+                                style={{ background: 'var(--accent-brand)', color: '#0d1117', opacity: pwSaving ? 0.7 : 1 }}>
+                                {pwSaving ? 'Saving…' : 'Update Password'}
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+
+                  {/* 2FA — Coming Soon */}
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                    className="flex items-center gap-4 p-4 rounded-2xl"
+                    style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)', opacity: 0.6 }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+                      <Smartphone size={16} style={{ color: 'var(--text-muted)' }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>Two-Factor Authentication</span>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide"
+                          style={{ background: 'rgba(96,165,250,0.12)', color: 'rgb(96,165,250)', border: '1px solid rgba(96,165,250,0.2)' }}>
+                          Coming Soon
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Add an extra layer of account security</div>
+                    </div>
+                  </motion.div>
+
+                  {/* Active Sessions */}
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                    className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
+                    <div className="flex items-center gap-4 p-4">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+                        <Shield size={16} style={{ color: 'var(--text-muted)' }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>Active Sessions</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>View and manage active login sessions</div>
+                      </div>
+                    </div>
+
+                    {sessionsLoading ? (
+                      <div className="px-4 pb-4" style={{ fontSize: 12, color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: 12 }}>Loading sessions…</div>
+                    ) : sessions.length === 0 ? (
+                      <div className="px-4 pb-4" style={{ fontSize: 12, color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: 12 }}>No sessions found.</div>
+                    ) : (
+                      <div style={{ borderTop: '1px solid var(--border)' }}>
+                        {sessions.map((s, i) => {
+                          // Match by sessionId if available (fresh login), else treat the most recent session as current
+                          const isCurrent = user?.sessionId
+                            ? s.sessionId === user.sessionId
+                            : i === 0;
+                          return (
+                            <div key={s.sessionId}
+                              className="flex items-center gap-3 px-4 py-3"
+                              style={{ borderBottom: i < sessions.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                              <Monitor size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{s.deviceLabel}</span>
+                                  {isCurrent && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold"
+                                      style={{ background: 'var(--accent-brand-dim)', color: 'var(--accent-brand)', border: '1px solid rgba(74,222,128,0.25)' }}>
+                                      Current
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 mt-0.5" style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                                  <span>Logged in {formatDate(s.createdAt)}</span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock size={9} /> Last active {timeAgo(s.lastActiveAt)}
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleRevokeSession(s.sessionId)}
+                                disabled={isCurrent}
+                                className="px-3 py-1 rounded-lg text-xs font-medium transition-all"
+                                style={{
+                                  background: isCurrent ? 'transparent' : 'rgba(248,113,113,0.08)',
+                                  color: isCurrent ? 'var(--text-muted)' : 'var(--accent-red)',
+                                  border: `1px solid ${isCurrent ? 'var(--border)' : 'rgba(248,113,113,0.2)'}`,
+                                  cursor: isCurrent ? 'not-allowed' : 'pointer',
+                                  opacity: isCurrent ? 0.5 : 1,
+                                }}>
+                                {isCurrent ? 'Active' : 'Revoke'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
                 </div>
 
                 {/* Danger zone */}

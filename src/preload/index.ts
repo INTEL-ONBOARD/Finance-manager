@@ -14,12 +14,14 @@ contextBridge.exposeInMainWorld('electron', {
 
   // Auth / Users
   auth: {
-    register: (name: string, email: string, password: string): Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; error?: string }> =>
+    register: (name: string, email: string, password: string): Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; sessionId?: string; error?: string }> =>
       ipcRenderer.invoke('auth:register', name, email, password),
-    login: (email: string, password: string): Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; error?: string }> =>
+    login: (email: string, password: string): Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; sessionId?: string; error?: string }> =>
       ipcRenderer.invoke('auth:login', email, password),
     userExists: (email: string): Promise<boolean> =>
       ipcRenderer.invoke('auth:userExists', email),
+    changePassword: (userId: string, oldPassword: string, newPassword: string): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke('auth:changePassword', userId, oldPassword, newPassword),
   },
 
   // MongoDB-backed collections (all scoped by userId)
@@ -38,9 +40,14 @@ contextBridge.exposeInMainWorld('electron', {
     bills: {
       getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:bills:getAll', userId),
       togglePaid: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:bills:togglePaid', userId, id),
+      add: (userId: string, doc: unknown): Promise<void> => ipcRenderer.invoke('db:bills:add', userId, doc),
+      delete: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:bills:delete', userId, id),
     },
     accounts: {
       getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:accounts:getAll', userId),
+      add: (userId: string, doc: unknown): Promise<void> => ipcRenderer.invoke('db:accounts:add', userId, doc),
+      update: (userId: string, id: string, updates: unknown): Promise<void> => ipcRenderer.invoke('db:accounts:update', userId, id, updates),
+      delete: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:accounts:delete', userId, id),
     },
     notifications: {
       getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:notifications:getAll', userId),
@@ -49,6 +56,14 @@ contextBridge.exposeInMainWorld('electron', {
       add: (userId: string, doc: unknown): Promise<void> => ipcRenderer.invoke('db:notifications:add', userId, doc),
     },
     clearUserData: (userId: string): Promise<void> => ipcRenderer.invoke('db:user:clearData', userId),
+    settings: {
+      get: (userId: string): Promise<unknown> => ipcRenderer.invoke('db:settings:get', userId),
+      save: (userId: string, settings: object): Promise<void> => ipcRenderer.invoke('db:settings:save', userId, settings),
+    },
+    sessions: {
+      list: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:sessions:list', userId),
+      revoke: (userId: string, sessionId: string): Promise<void> => ipcRenderer.invoke('db:sessions:revoke', userId, sessionId),
+    },
   },
 
   // Chat

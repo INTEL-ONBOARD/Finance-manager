@@ -20,7 +20,7 @@ let store: any = null
 
 async function initStore() {
   const { default: Store } = await import('electron-store')
-  store = new Store({ name: 'finmate-data' })
+  store = new Store({ name: 'finmate-theme' })
 }
 
 // ── MongoDB Atlas ─────────────────────────────────────────────────────────────
@@ -109,11 +109,31 @@ function registerIpcHandlers(): void {
     if (bill) await col('bills').updateOne({ id, userId }, { $set: { paid: !bill.paid } })
     return null
   })
+  ipcMain.handle('db:bills:add', async (_e, userId: string, doc: object) => {
+    await col('bills').insertOne({ ...doc, userId })
+    return null
+  })
+  ipcMain.handle('db:bills:delete', async (_e, userId: string, id: string) => {
+    await col('bills').deleteOne({ id, userId })
+    return null
+  })
 
   // ── Accounts ─────────────────────────────────────────────────────────────────
   ipcMain.handle('db:accounts:getAll', async (_e, userId: string) =>
     col('accounts').find({ userId }, { projection: { _id: 0, userId: 0 } }).toArray()
   )
+  ipcMain.handle('db:accounts:add', async (_e, userId: string, doc: object) => {
+    await col('accounts').insertOne({ ...doc, userId })
+    return null
+  })
+  ipcMain.handle('db:accounts:update', async (_e, userId: string, id: string, updates: object) => {
+    await col('accounts').updateOne({ id, userId }, { $set: updates })
+    return null
+  })
+  ipcMain.handle('db:accounts:delete', async (_e, userId: string, id: string) => {
+    await col('accounts').deleteOne({ id, userId })
+    return null
+  })
 
   // ── Notifications ─────────────────────────────────────────────────────────────
   ipcMain.handle('db:notifications:getAll', async (_e, userId: string) =>
@@ -141,7 +161,11 @@ function registerIpcHandlers(): void {
     const hash = (await scryptAsync(password, salt, 64) as Buffer).toString('hex')
     const id = `u_${Date.now()}`
     await users.insertOne({ id, name, email, salt, hash })
-    return { ok: true, user: { id, name, email } }
+    const sessionId = `s_${Date.now()}`
+    const deviceLabel = process.platform === 'darwin' ? 'macOS' : process.platform === 'win32' ? 'Windows' : 'Linux'
+    const now = new Date().toISOString()
+    await col('sessions').insertOne({ sessionId, userId: id, deviceLabel, createdAt: now, lastActiveAt: now })
+    return { ok: true, user: { id, name, email }, sessionId }
   })
 
   ipcMain.handle('auth:login', async (_e, email: string, password: string) => {
@@ -152,7 +176,11 @@ function registerIpcHandlers(): void {
     const storedBuf = Buffer.from(doc.hash as string, 'hex')
     const match = hashBuf.length === storedBuf.length && timingSafeEqual(hashBuf, storedBuf)
     if (!match) return { ok: false, error: 'Invalid email or password' }
-    return { ok: true, user: { id: doc.id, name: doc.name, email: doc.email } }
+    const sessionId = `s_${Date.now()}`
+    const deviceLabel = process.platform === 'darwin' ? 'macOS' : process.platform === 'win32' ? 'Windows' : 'Linux'
+    const now = new Date().toISOString()
+    await col('sessions').insertOne({ sessionId, userId: doc.id, deviceLabel, createdAt: now, lastActiveAt: now })
+    return { ok: true, user: { id: doc.id, name: doc.name, email: doc.email }, sessionId }
   })
 
   ipcMain.handle('auth:userExists', async (_e, email: string) => {
@@ -160,9 +188,47 @@ function registerIpcHandlers(): void {
     return !!doc
   })
 
+  // ── Settings ──────────────────────────────────────────────────────────────────
+  ipcMain.handle('db:settings:get', async (_e, userId: string) =>
+    col('settings').findOne({ userId }, { projection: { _id: 0, userId: 0 } }) ?? null
+  )
+  ipcMain.handle('db:settings:save', async (_e, userId: string, settings: Record<string, unknown>) => {
+    await col('settings').updateOne({ userId }, { $set: { userId, ...settings } }, { upsert: true })
+    const { name, email } = settings as { name?: string; email?: string }
+    const userUpdate: Record<string, string> = {}
+    if (name) userUpdate.name = name
+    if (email) userUpdate.email = email
+    if (Object.keys(userUpdate).length) await col('users').updateOne({ id: userId }, { $set: userUpdate })
+    return null
+  })
+
+  // ── Sessions ──────────────────────────────────────────────────────────────────
+  ipcMain.handle('db:sessions:list', async (_e, userId: string) =>
+    col('sessions').find({ userId }, { projection: { _id: 0 } }).sort({ lastActiveAt: -1 }).toArray()
+  )
+  ipcMain.handle('db:sessions:revoke', async (_e, userId: string, sessionId: string) => {
+    await col('sessions').deleteOne({ userId, sessionId })
+    return null
+  })
+
+  // ── Change Password ───────────────────────────────────────────────────────────
+  ipcMain.handle('auth:changePassword', async (_e, userId: string, oldPassword: string, newPassword: string) => {
+    const userDoc = await col('users').findOne({ id: userId })
+    if (!userDoc) return { ok: false, error: 'User not found' }
+    const oldHash = await scryptAsync(oldPassword, userDoc.salt as string, 64) as Buffer
+    const storedBuf = Buffer.from(userDoc.hash as string, 'hex')
+    if (oldHash.length !== storedBuf.length || !timingSafeEqual(oldHash, storedBuf)) {
+      return { ok: false, error: 'Incorrect current password' }
+    }
+    const salt = randomBytes(16).toString('hex')
+    const hash = (await scryptAsync(newPassword, salt, 64) as Buffer).toString('hex')
+    await col('users').updateOne({ id: userId }, { $set: { salt, hash } })
+    return { ok: true }
+  })
+
   // ── Data management ───────────────────────────────────────────────────────────
   ipcMain.handle('db:user:clearData', async (_e, userId: string) => {
-    const collections = ['transactions', 'goals', 'bills', 'accounts', 'notifications']
+    const collections = ['transactions', 'goals', 'bills', 'accounts', 'notifications', 'settings', 'sessions']
     await Promise.all(collections.map(name => col(name).deleteMany({ userId })))
     return null
   })
@@ -302,8 +368,7 @@ function registerChatStreamHandlers(win: BrowserWindow): void {
     stream.on('change', (change: any) => {
       if (change.operationType === 'insert' && change.fullDocument) {
         if (!win.isDestroyed()) {
-          const { _id, ...msg } = change.fullDocument
-          void _id
+          const { _id: _ignored, ...msg } = change.fullDocument
           win.webContents.send('chat:message:new', { conversationId, message: msg })
         }
       }

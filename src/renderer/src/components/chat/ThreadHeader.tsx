@@ -9,7 +9,7 @@ export default function ThreadHeader() {
   const isGroup = activeConversationId === 'group';
 
   let name = 'Group Chat';
-  let subtitle = 'Everyone in Finwise';
+  let subtitle = 'Everyone in FinMate';
   if (!isGroup) {
     // Extract peer user id from dm_<id1>_<id2> — IDs may contain underscores so match directly
     const peer = allUsers.find(u => activeConversationId.includes(u.id));

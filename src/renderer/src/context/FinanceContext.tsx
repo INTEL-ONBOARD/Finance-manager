@@ -83,6 +83,7 @@ interface FinanceContextType {
   savingsRate: number;
   creditUtilization: number;
   unreadNotificationCount: number;
+  dbError: string | null;
 }
 
 function buildNotifications(
@@ -177,6 +178,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
   const [bills, setBills] = useState<Bill[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [dbError, setDbError] = useState<string | null>(null);
 
   // Re-hydrate whenever the logged-in user changes
   useEffect(() => {
@@ -208,7 +210,10 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
         setNotifications(prev => prev.some(x => x.id === doc.id) ? prev : [doc, ...prev]);
         window.electron?.db.notifications.add(userId, doc);
       }
-    }).catch(console.error);
+    }).catch((err: unknown) => {
+      console.error(err);
+      setDbError('Unable to load your data. Please check your connection.');
+    });
   }, [userId]);
 
   // ── Derived values ─────────────────────────────────────────────────────────
@@ -334,6 +339,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
       totalBalance, netWorth, monthlyIncome, monthlyExpenses,
       monthlySaved, savingsRate, creditUtilization,
       unreadNotificationCount,
+      dbError,
     }}>
       {children}
     </FinanceContext.Provider>
