@@ -8,14 +8,10 @@ export default function ThreadHeader() {
 
   const isGroup = activeConversationId === 'group';
 
-  let name = 'Group Chat';
-  let subtitle = 'Everyone in FinMate';
-  if (!isGroup) {
-    // Extract peer user id from dm_<id1>_<id2> — IDs may contain underscores so match directly
-    const peer = allUsers.find(u => activeConversationId.includes(u.id));
-    name = peer?.name ?? 'Direct Message';
-    subtitle = 'Direct Message';
-  }
+  // Extract peer user id from dm_<id1>_<id2> — IDs may contain underscores so match directly
+  const peer = isGroup ? null : (allUsers.find(u => activeConversationId.includes(u.id)) ?? null);
+  const name = isGroup ? 'Group Chat' : (peer?.name ?? 'Direct Message');
+  const subtitle = isGroup ? 'Everyone in FinMate' : 'Direct Message';
 
   return (
     <div
