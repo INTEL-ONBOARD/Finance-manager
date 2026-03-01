@@ -140,6 +140,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Real-time presence updates via Change Stream push
+  useEffect(() => {
+    const el = window.electron?.chat;
+    if (!el) return;
+    const unsubscribe = el.onPresenceUpdate(({ userId, lastActiveAt }) => {
+      setAllUsers(prev =>
+        prev.map(u => u.id === userId ? { ...u, lastActiveAt } : u)
+      );
+    });
+    return unsubscribe;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Switch active conversation
   const openConversation = useCallback(async (id: string) => {
     const el = window.electron?.chat;
@@ -237,16 +249,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }, 30_000);
     return () => clearInterval(interval);
   }, [user?.sessionId]);
-
-  // Refresh user list every 60s to pick up presence changes
-  useEffect(() => {
-    const el = window.electron?.chat;
-    if (!user || !el) return;
-    const interval = setInterval(() => {
-      el.listUsers(user.id).then(setAllUsers).catch(() => {});
-    }, 60_000);
-    return () => clearInterval(interval);
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Track all watched conversation IDs for cleanup
   const watchedIdsRef = useRef<Set<string>>(new Set());
