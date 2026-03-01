@@ -17,6 +17,7 @@ import ExchangesPage from './pages/ExchangesPage'
 import CommunityPage from './pages/CommunityPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import OnboardingPage from './pages/OnboardingPage'
 import { useAuth } from './context/AuthContext'
 import { Hexagon } from 'lucide-react'
 
@@ -76,6 +77,7 @@ const router = createHashRouter([
   // Public / Auth Routes
   { path: '/login', element: <PublicRoute><LoginPage /></PublicRoute> },
   { path: '/register', element: <PublicRoute><RegisterPage /></PublicRoute> },
+  { path: '/onboarding', element: <PrivateRoute><OnboardingPage /></PrivateRoute> },
 ])
 
 export default function App() {
