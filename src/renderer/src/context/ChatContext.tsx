@@ -60,6 +60,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const activeConversationIdRef = useRef<string | null>(null);
   activeConversationIdRef.current = activeConversationId;
 
+  // Track all watched conversation IDs for cleanup — declared before any effect that uses it
+  const watchedIdsRef = useRef<Set<string>>(new Set());
+
   // Load sidebar conversations + all users on mount; auto-watch all known conversations
   useEffect(() => {
     const el = window.electron?.chat;
@@ -249,9 +252,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }, 30_000);
     return () => clearInterval(interval);
   }, [user?.sessionId]);
-
-  // Track all watched conversation IDs for cleanup
-  const watchedIdsRef = useRef<Set<string>>(new Set());
 
   // Cleanup on unmount — unwatch all streams
   useEffect(() => {
