@@ -77,7 +77,7 @@ const router = createHashRouter([
   // Public / Auth Routes
   { path: '/login', element: <PublicRoute><LoginPage /></PublicRoute> },
   { path: '/register', element: <PublicRoute><RegisterPage /></PublicRoute> },
-  { path: '/onboarding', element: <PrivateRoute><OnboardingPage /></PrivateRoute> },
+  { path: '/onboarding', element: <OnboardingPage /> },
 ])
 
 export default function App() {
