@@ -4,7 +4,6 @@ import {
   Wallet, CreditCard, TrendingUp, PiggyBank, Receipt,
   Plus, MoreHorizontal, Pencil, Trash2, SlidersHorizontal,
 } from 'lucide-react';
-import AppShell from '@/components/AppShell';
 import { useFinance } from '@/context/FinanceContext';
 import { useAuth } from '@/context/AuthContext';
 import type { Account } from '@/context/FinanceContext';
@@ -172,7 +171,7 @@ export default function AccountsPage() {
   })();
 
   return (
-    <AppShell>
+    <>
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
         style={{ marginBottom: 20 }}>
@@ -612,6 +611,6 @@ export default function AccountsPage() {
 
       {/* Add / Edit Modal */}
       <AddAccountModal open={modalOpen} onClose={handleModalClose} editAccount={editAccount} />
-    </AppShell>
+    </>
   );
 }

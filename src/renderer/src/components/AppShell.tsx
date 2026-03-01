@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { useFinance } from '@/context/FinanceContext';
 
-export default function AppShell({ children, fullBleed }: { children: React.ReactNode; fullBleed?: boolean }) {
+export default function AppShell({ children, fullBleed }: { children?: React.ReactNode; fullBleed?: boolean }) {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { dbError } = useFinance();
@@ -60,7 +61,7 @@ export default function AppShell({ children, fullBleed }: { children: React.Reac
         )}
         <main className={`flex-1 w-full ${fullBleed ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           <div className={`${fullBleed ? 'h-full overflow-hidden' : 'p-8 flex flex-col gap-6'} w-full relative`}>
-            {children}
+            {children ?? <Outlet />}
           </div>
         </main>
       </div>

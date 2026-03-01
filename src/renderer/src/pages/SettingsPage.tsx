@@ -8,8 +8,6 @@ import {
   RefreshCw, Download, CheckCircle, AlertCircle, ArrowUpCircle,
   Monitor, Eye, EyeOff, Clock,
 } from 'lucide-react';
-import AppShell from '@/components/AppShell';
-
 const sections = [
   { id: 'profile',       label: 'Profile',       icon: User },
   { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -73,6 +71,16 @@ export default function SettingsPage() {
   }, []);
 
   // Avatar
+  const AVATARS = [
+    '/profile-avatar/monster.png', '/profile-avatar/monster_2.png',
+    '/profile-avatar/monster_3.png', '/profile-avatar/monster_4.png',
+    '/profile-avatar/monster_5.png', '/profile-avatar/monster_6.png',
+    '/profile-avatar/monster_7.png', '/profile-avatar/monster_8.png',
+    '/profile-avatar/monster_9.png', '/profile-avatar/monster_10.png',
+    '/profile-avatar/monster_11.png', '/profile-avatar/monster_12.png',
+    '/profile-avatar/monster_13.png',
+  ];
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [avatarError, setAvatarError] = useState('');
 
   // Security — change password
@@ -172,6 +180,13 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePresetAvatar = (src: string) => {
+    if (!user) return;
+    updateUser({ avatar: src });
+    window.electron?.db.settings.save(user.id, { avatar: src }).catch(() => {});
+    setShowAvatarPicker(false);
+  };
+
   const handleAvatarClick = async () => {
     if (!user) return;
     setAvatarError('');
@@ -243,7 +258,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <div className="flex gap-5 min-h-0">
 
         {/* ── Sidebar nav ── */}
@@ -332,11 +347,53 @@ export default function SettingsPage() {
                         </div>
                       )}
                       <button
-                        onClick={handleAvatarClick}
+                        onClick={() => setShowAvatarPicker(v => !v)}
                         className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl flex items-center justify-center"
                         style={{ background: 'var(--accent-brand)', color: '#0d1117' }}>
                         <Camera size={12} />
                       </button>
+
+                      {showAvatarPicker && (
+                        <>
+                          <div onClick={() => setShowAvatarPicker(false)}
+                            style={{ position: 'fixed', inset: 0, zIndex: 49 }} />
+                          <div style={{
+                            position: 'absolute', top: 90, left: 0, zIndex: 50,
+                            background: 'var(--bg-card)', border: '1px solid var(--border)',
+                            borderRadius: 16, padding: 16, width: 280,
+                            boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
+                          }}>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 10 }}>
+                              Choose an avatar
+                            </p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+                              {AVATARS.map(src => (
+                                <button key={src} type="button" onClick={() => handlePresetAvatar(src)}
+                                  style={{
+                                    aspectRatio: '1', padding: 2, borderRadius: 8,
+                                    border: 'none', cursor: 'pointer',
+                                    background: user?.avatar === src ? 'var(--accent-brand)' : 'transparent',
+                                    outline: user?.avatar === src ? '2px solid var(--accent-brand)' : 'none',
+                                    outlineOffset: 1,
+                                  }}>
+                                  <img src={src} alt="avatar" style={{ width: '100%', borderRadius: 6, display: 'block' }} />
+                                </button>
+                              ))}
+                              <button type="button"
+                                onClick={() => { setShowAvatarPicker(false); handleAvatarClick(); }}
+                                style={{
+                                  aspectRatio: '1', borderRadius: 8, cursor: 'pointer',
+                                  border: '1.5px dashed var(--border)', background: 'var(--bg-secondary)',
+                                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                  justifyContent: 'center', gap: 2,
+                                }}>
+                                <Camera size={14} style={{ color: 'var(--text-muted)' }} />
+                                <span style={{ fontSize: 8, color: 'var(--text-muted)', fontWeight: 600 }}>Upload</span>
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{profile.name || user?.name}</div>
@@ -951,6 +1008,6 @@ export default function SettingsPage() {
           </AnimatePresence>
         </div>
       </div>
-    </AppShell>
+    </>
   );
 }

@@ -1,10 +1,9 @@
-import AppShell from '@/components/AppShell';
 import FloatingAIChat from '@/components/FloatingAIChat';
 import { Sparkles, BotMessageSquare } from 'lucide-react';
 
 export default function AIChatPage() {
     return (
-        <AppShell>
+        <>
             <div className="flex flex-col items-center justify-center h-full p-8 gap-6 max-w-3xl mx-auto w-full text-center">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#84cc16] to-[#65a30d] flex items-center justify-center shadow-lg text-white mb-4">
                     <BotMessageSquare size={32} />
@@ -32,6 +31,6 @@ export default function AIChatPage() {
 
             {/* The Floating AI chat component actually gets used here globally anyway */}
             <FloatingAIChat />
-        </AppShell>
+        </>
     );
 }

@@ -1,7 +1,6 @@
 import { useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, Edit2, Check, X, Umbrella, Plane, Laptop, Home, Car, GraduationCap, Heart, Star, ShoppingBag, Smartphone } from 'lucide-react';
-import AppShell from '@/components/AppShell';
 const AddGoalModal = lazy(() => import('@/components/modals/AddGoalModal'));
 import { useFinance } from '@/context/FinanceContext';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -38,7 +37,7 @@ export default function GoalsPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Active Goals', value: String(goals.length), color: 'var(--accent-brand)' },
@@ -153,6 +152,6 @@ export default function GoalsPage() {
       <Suspense fallback={null}>
         <AddGoalModal open={addOpen} onClose={() => setAddOpen(false)} />
       </Suspense>
-    </AppShell>
+    </>
   );
 }

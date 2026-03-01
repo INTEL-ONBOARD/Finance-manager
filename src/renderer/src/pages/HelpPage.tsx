@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, MessageCircle, Book, HelpCircle } from 'lucide-react';
-import AppShell from '@/components/AppShell';
-
 const faqs = [
   { q: 'How do I add a transaction?', a: 'Click "+ Add" on the Transactions page or use the Overview dashboard. Fill in the description, amount, category, and account.' },
   { q: 'How do I create a savings goal?', a: 'Go to Goals in the sidebar and click "New Goal". Set a target amount and deadline, then track your progress.' },
@@ -16,7 +14,7 @@ export default function HelpPage() {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <AppShell>
+    <>
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center"
           style={{ background: 'var(--accent-brand-dim)', border: '1px solid rgba(74,222,128,0.25)' }}>
@@ -76,6 +74,6 @@ export default function HelpPage() {
           ))}
         </div>
       </motion.div>
-    </AppShell>
+    </>
   );
 }

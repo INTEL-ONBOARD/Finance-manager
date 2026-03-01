@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import AppShell from '@/components/AppShell';
 import { useFinance } from '@/context/FinanceContext';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
@@ -39,7 +38,7 @@ export default function BudgetPage() {
   const chartData = [{ month: currentMonthLabel, income: Math.round(monthlyIncome), expenses: Math.round(monthlyExpenses) }];
 
   return (
-    <AppShell>
+    <>
       {/* Top stats */}
       <div className="grid grid-cols-4 gap-3">
         {[
@@ -141,6 +140,6 @@ export default function BudgetPage() {
           })}
         </div>
       </motion.div>
-    </AppShell>
+    </>
   );
 }

@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import AppShell from '@/components/AppShell';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useFinance } from '@/context/FinanceContext';
@@ -28,7 +27,7 @@ export default function InvestmentsPage() {
   const totalPct   = ((totalGain / totalCost) * 100).toFixed(1);
 
   return (
-    <AppShell>
+    <>
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Portfolio Value',    value: formatCurrency(totalValue, currency, 0),                                                        color: 'var(--accent-brand)' },
@@ -113,6 +112,6 @@ export default function InvestmentsPage() {
           })}
         </div>
       </motion.div>
-    </AppShell>
+    </>
   );
 }

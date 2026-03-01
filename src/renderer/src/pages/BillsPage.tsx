@@ -1,7 +1,6 @@
 import { useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Clock, Home, Zap, Wifi, Tv, Dumbbell, Shield, Plus, Trash2, Pencil } from 'lucide-react';
-import AppShell from '@/components/AppShell';
 import { useFinance } from '@/context/FinanceContext';
 import type { Bill } from '@/context/FinanceContext';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -33,7 +32,7 @@ export default function BillsPage() {
   const isDueSoon = (b: typeof bills[0]) => !b.paid && b.dueDay >= today && b.dueDay <= today + 3;
 
   return (
-    <AppShell>
+    <>
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         {[
@@ -161,6 +160,6 @@ export default function BillsPage() {
         <AddBillModal open={addOpen} onClose={() => setAddOpen(false)} />
         <AddBillModal open={editBill !== null} onClose={() => setEditBill(null)} bill={editBill ?? undefined} />
       </Suspense>
-    </AppShell>
+    </>
   );
 }

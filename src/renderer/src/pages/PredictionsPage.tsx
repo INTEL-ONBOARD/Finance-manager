@@ -1,11 +1,9 @@
-import AppShell from '@/components/AppShell';
 import { Target, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function PredictionsPage() {
     return (
-        <AppShell>
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 relative">
+        <div className="flex flex-col items-center justify-center h-full text-center p-8 relative">
                 <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(var(--text-primary) 1px, transparent 1px), linear-gradient(to right, var(--text-primary) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
                 <div className="relative z-10 flex flex-col items-center">
@@ -28,6 +26,6 @@ export default function PredictionsPage() {
                     </Link>
                 </div>
             </div>
-        </AppShell>
+        </div>
     );
 }

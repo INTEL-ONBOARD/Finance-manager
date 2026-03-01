@@ -1,4 +1,5 @@
-import { createHashRouter, RouterProvider, Navigate } from 'react-router-dom'
+import { createHashRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom'
+import AppShell from './components/AppShell'
 import HomePage from './pages/HomePage'
 import AccountsPage from './pages/AccountsPage'
 import BillsPage from './pages/BillsPage'
@@ -21,13 +22,13 @@ import OnboardingPage from './pages/OnboardingPage'
 import { useAuth } from './context/AuthContext'
 import { Hexagon } from 'lucide-react'
 
-// Private route wrapper
-function PrivateRoute({ children }: { children: React.ReactNode }) {
+// Layout wrapper: renders AppShell once, page content swaps via Outlet
+function PrivateLayout({ fullBleed }: { fullBleed?: boolean }) {
   const { isAuthenticated, loading } = useAuth()
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-900" style={{ background: 'var(--bg-primary)' }}>
+      <div className="flex h-screen w-full items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
         <div className="animate-pulse flex items-center justify-center w-16 h-16 rounded-2xl bg-lime-500/20">
           <Hexagon size={32} className="text-lime-500" />
         </div>
@@ -35,7 +36,8 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <AppShell fullBleed={fullBleed}><Outlet /></AppShell>
 }
 
 // Redirect wrapper for auth pages (if logged in, go to home)
@@ -77,23 +79,34 @@ function OnboardingRoute({ children }: { children: React.ReactNode }) {
 }
 
 const router = createHashRouter([
-  // Private / Main App Routes
-  { path: '/', element: <PrivateRoute><HomePage /></PrivateRoute> },
-  { path: '/accounts', element: <PrivateRoute><AccountsPage /></PrivateRoute> },
-  { path: '/bills', element: <PrivateRoute><BillsPage /></PrivateRoute> },
-  { path: '/budget', element: <PrivateRoute><BudgetPage /></PrivateRoute> },
-  { path: '/goals', element: <PrivateRoute><GoalsPage /></PrivateRoute> },
-  { path: '/help', element: <PrivateRoute><HelpPage /></PrivateRoute> },
-  { path: '/investments', element: <PrivateRoute><InvestmentsPage /></PrivateRoute> },
-  { path: '/notifications', element: <PrivateRoute><NotificationsPage /></PrivateRoute> },
-  { path: '/settings', element: <PrivateRoute><SettingsPage /></PrivateRoute> },
-  { path: '/transactions', element: <PrivateRoute><TransactionsPage /></PrivateRoute> },
-  { path: '/ai-chat', element: <PrivateRoute><AIChatPage /></PrivateRoute> },
-  { path: '/market', element: <PrivateRoute><MarketPage /></PrivateRoute> },
-  { path: '/portfolio', element: <PrivateRoute><PortfolioPage /></PrivateRoute> },
-  { path: '/predictions', element: <PrivateRoute><PredictionsPage /></PrivateRoute> },
-  { path: '/exchanges', element: <PrivateRoute><ExchangesPage /></PrivateRoute> },
-  { path: '/community', element: <PrivateRoute><CommunityPage /></PrivateRoute> },
+  // Private routes — share a single AppShell layout
+  {
+    element: <PrivateLayout />,
+    children: [
+      { path: '/', element: <HomePage /> },
+      { path: '/accounts', element: <AccountsPage /> },
+      { path: '/bills', element: <BillsPage /> },
+      { path: '/budget', element: <BudgetPage /> },
+      { path: '/goals', element: <GoalsPage /> },
+      { path: '/help', element: <HelpPage /> },
+      { path: '/investments', element: <InvestmentsPage /> },
+      { path: '/notifications', element: <NotificationsPage /> },
+      { path: '/settings', element: <SettingsPage /> },
+      { path: '/transactions', element: <TransactionsPage /> },
+      { path: '/ai-chat', element: <AIChatPage /> },
+      { path: '/market', element: <MarketPage /> },
+      { path: '/portfolio', element: <PortfolioPage /> },
+      { path: '/predictions', element: <PredictionsPage /> },
+      { path: '/exchanges', element: <ExchangesPage /> },
+    ],
+  },
+  // fullBleed layout (no padding in main content area)
+  {
+    element: <PrivateLayout fullBleed />,
+    children: [
+      { path: '/community', element: <CommunityPage /> },
+    ],
+  },
 
   // Public / Auth Routes
   { path: '/login', element: <PublicRoute><LoginPage /></PublicRoute> },

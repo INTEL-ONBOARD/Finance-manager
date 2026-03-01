@@ -1,7 +1,6 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Search, X, ShoppingCart, Utensils, Zap, Car, Home, Dumbbell, Wifi, Music, ArrowDownLeft, Tv, Package, Heart, Filter, Upload } from 'lucide-react';
-import AppShell from '@/components/AppShell';
 const AddTransactionModal = lazy(() => import('@/components/modals/AddTransactionModal'));
 const TransactionDetailModal = lazy(() => import('@/components/modals/TransactionDetailModal'));
 const ImportStatementModal = lazy(() => import('@/components/modals/ImportStatementModal'));
@@ -58,7 +57,7 @@ export default function TransactionsPage() {
   }, [filtered]);
 
   return (
-    <AppShell>
+    <>
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Income this month',   value: formatCurrency(monthlyIncome, currency, 0),   color: 'var(--accent-green)' },
@@ -198,6 +197,6 @@ export default function TransactionsPage() {
         <TransactionDetailModal transaction={selected} onClose={() => setSelected(null)} />
         <ImportStatementModal open={importOpen} onClose={() => setImportOpen(false)} />
       </Suspense>
-    </AppShell>
+    </>
   );
 }

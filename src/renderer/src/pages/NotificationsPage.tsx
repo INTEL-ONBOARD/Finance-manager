@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { Bell, AlertCircle, CheckCircle2, Info, Check } from 'lucide-react';
-import AppShell from '@/components/AppShell';
 import { useFinance } from '@/context/FinanceContext';
 
 const iconMap = { alert: AlertCircle, success: CheckCircle2, info: Info };
@@ -12,7 +11,7 @@ export default function NotificationsPage() {
   const unread = notifications.filter(n => !n.read).length;
 
   return (
-    <AppShell>
+    <>
       <div className="flex items-center justify-between">
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Notifications</h2>
@@ -68,6 +67,6 @@ export default function NotificationsPage() {
           </div>
         )}
       </motion.div>
-    </AppShell>
+    </>
   );
 }
