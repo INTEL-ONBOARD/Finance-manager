@@ -403,7 +403,7 @@ export default function AccountsPage() {
                           <span style={{ fontSize: 11, color: 'var(--text-secondary)' }} className="truncate">{t.name}</span>
                           <span style={{
                             fontSize: 11, fontFamily: 'Geist Mono, monospace', flexShrink: 0, marginLeft: 8,
-                            color: t.amount > 0 ? 'var(--accent-green)' : 'var(--text-primary)',
+                            color: t.amount > 0 ? 'var(--accent-green)' : 'var(--accent-red)',
                           }}>
                             {t.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(t.amount), currency)}
                           </span>
