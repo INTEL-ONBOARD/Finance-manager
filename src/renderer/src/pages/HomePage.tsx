@@ -11,7 +11,7 @@ export default function HomePage() {
     <AppShell>
       <div className="flex flex-col gap-4 pb-20 relative min-h-full">
         <StatCards />
-        <div className="grid grid-cols-[2fr_1fr] gap-4 w-full">
+        <div className="grid grid-cols-[2fr_1fr] gap-4 w-full items-stretch">
           <TransactionsFeed />
           <BudgetCard />
         </div>

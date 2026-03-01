@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wallet, CreditCard, TrendingUp, PiggyBank, Receipt,
-  Plus, MoreHorizontal, Pencil, Trash2,
+  Plus, MoreHorizontal, Pencil, Trash2, SlidersHorizontal,
 } from 'lucide-react';
 import AppShell from '@/components/AppShell';
 import { useFinance } from '@/context/FinanceContext';
@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { Account } from '@/context/FinanceContext';
 import { formatCurrency } from '@/utils/formatCurrency';
 import AddAccountModal from '@/components/modals/AddAccountModal';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -95,6 +96,17 @@ const NETWORK_BADGE: Record<string, React.ReactNode> = {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+type FilterType = 'all' | Account['type'];
+
+const FILTER_OPTIONS: { key: FilterType; label: string }[] = [
+  { key: 'all',        label: 'All' },
+  { key: 'checking',   label: 'Checking' },
+  { key: 'savings',    label: 'Savings' },
+  { key: 'credit',     label: 'Credit' },
+  { key: 'investment', label: 'Investment' },
+  { key: 'loan',       label: 'Loan' },
+];
+
 export default function AccountsPage() {
   const { accounts, transactions, currency, deleteAccount } = useFinance();
   const { user } = useAuth();
@@ -103,9 +115,36 @@ export default function AccountsPage() {
   const [editAccount, setEditAccount]       = useState<Account | undefined>(undefined);
   const [menuOpen, setMenuOpen]             = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm]   = useState<string | null>(null);
+  const [activeFilter, setActiveFilter]     = useState<FilterType>('all');
 
-  const totalAssets = accounts.filter(a => a.balance > 0).reduce((s, a) => s + a.balance, 0);
-  const totalDebt   = accounts.filter(a => a.balance < 0).reduce((s, a) => s + Math.abs(a.balance), 0);
+  const totalAssets  = accounts.filter(a => a.balance > 0).reduce((s, a) => s + a.balance, 0);
+  const totalDebt    = accounts.filter(a => a.balance < 0).reduce((s, a) => s + Math.abs(a.balance), 0);
+  const netWorthDisp = totalAssets - totalDebt;
+
+  // Build monthly cumulative balance chart data from transactions
+  const balanceChartData = useMemo(() => {
+    if (transactions.length === 0) return [];
+    const sorted = [...transactions].sort((a, b) => a.date.localeCompare(b.date));
+    const monthMap: Record<string, number> = {};
+    for (const t of sorted) {
+      const month = t.date.slice(0, 7); // "YYYY-MM"
+      monthMap[month] = (monthMap[month] || 0) + t.amount;
+    }
+    // Build cumulative running total
+    const months = Object.keys(monthMap).sort();
+    let running = 0;
+    return months.map(m => {
+      running += monthMap[m];
+      const [y, mo] = m.split('-').map(Number);
+      const label = new Date(y, mo - 1, 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      return { month: label, value: Math.round(running) };
+    });
+  }, [transactions]);
+
+  const visibleAccounts = useMemo(() =>
+    activeFilter === 'all' ? accounts : accounts.filter(a => a.type === activeFilter),
+    [accounts, activeFilter]
+  );
 
   const handleEdit          = (acct: Account) => { setEditAccount(acct); setMenuOpen(null); setModalOpen(true); };
   const handleDeleteConfirm = (id: string)    => { setDeleteConfirm(null); setMenuOpen(null); deleteAccount(id); };
@@ -122,32 +161,118 @@ export default function AccountsPage() {
 
   return (
     <AppShell>
-      {/* ── Stat row ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 mb-4">
-        {[
-          { label: 'Total Assets', value: formatCurrency(totalAssets, currency), color: 'var(--accent-green)' },
-          { label: 'Total Debt',   value: formatCurrency(totalDebt,   currency), color: 'var(--accent-red)'   },
-        ].map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }} className="card p-4 flex-1">
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{s.label}</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: s.color, fontFamily: 'Geist Mono, monospace', letterSpacing: '-0.02em' }}>{s.value}</div>
-          </motion.div>
-        ))}
-        <motion.button
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-          onClick={handleAddClick}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '10px 18px', borderRadius: 10, border: 'none',
-            background: 'var(--accent-brand)', color: '#fff',
-            fontSize: 14, fontWeight: 600, cursor: 'pointer',
-            whiteSpace: 'nowrap', alignSelf: 'center',
-          }}
-        >
-          <Plus size={16} /> Add Account
-        </motion.button>
-      </div>
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+        style={{ marginBottom: 20 }}>
+
+        {/* Top row: title + Add button */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>Accounts</h1>
+            <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>
+              {accounts.length} account{accounts.length !== 1 ? 's' : ''} connected
+            </p>
+          </div>
+          <button
+            onClick={handleAddClick}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '9px 16px', borderRadius: 10, border: 'none',
+              background: 'var(--accent-brand)', color: '#fff',
+              fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            <Plus size={15} /> Add Account
+          </button>
+        </div>
+
+        {/* Stats strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 14 }}>
+          {[
+            { label: 'Total Assets',  value: formatCurrency(totalAssets,  currency), color: 'var(--accent-green)', sub: `${accounts.filter(a => a.balance > 0).length} accounts` },
+            { label: 'Total Debt',    value: formatCurrency(totalDebt,    currency), color: 'var(--accent-red)',   sub: `${accounts.filter(a => a.balance < 0).length} accounts` },
+            { label: 'Net Worth',     value: formatCurrency(netWorthDisp, currency), color: netWorthDisp >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', sub: 'assets − debt' },
+            { label: 'Accounts',      value: String(accounts.length),                color: 'var(--text-primary)', sub: `${FILTER_OPTIONS.slice(1).filter(f => accounts.some(a => a.type === f.key)).length} types` },
+          ].map(s => (
+            <div key={s.label} className="card" style={{ padding: '12px 16px' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>{s.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: s.color, fontFamily: 'Geist Mono, monospace', letterSpacing: '-0.02em', marginBottom: 2 }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Balance over time chart */}
+        {balanceChartData.length > 1 && (
+          <div className="card" style={{ padding: '16px 20px 12px', marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>
+              Portfolio Value Over Time
+            </div>
+            <div style={{ height: 120 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={balanceChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#818cf8" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#818cf8" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false}
+                    tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }}
+                    interval="preserveStartEnd" />
+                  <YAxis hide domain={['auto', 'auto']} />
+                  <Tooltip
+                    formatter={(v: number) => [formatCurrency(v, currency, 0), 'Balance']}
+                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, fontSize: 12 }}
+                    labelStyle={{ color: 'var(--text-muted)' }}
+                    cursor={{ stroke: 'var(--border)', strokeWidth: 1 }}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="#818cf8" strokeWidth={2}
+                    fill="url(#balGrad)" dot={false}
+                    activeDot={{ r: 4, fill: '#818cf8', strokeWidth: 0 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Filter pills + icon */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <SlidersHorizontal size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {FILTER_OPTIONS.map(f => {
+              const count = f.key === 'all' ? accounts.length : accounts.filter(a => a.type === f.key).length;
+              const active = activeFilter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setActiveFilter(f.key)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '5px 12px', borderRadius: 20, border: '1px solid',
+                    borderColor: active ? 'var(--accent-brand)' : 'var(--border)',
+                    background: active ? 'var(--accent-brand)' : 'transparent',
+                    color: active ? '#fff' : 'var(--text-secondary)',
+                    fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {f.label}
+                  {count > 0 && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700,
+                      background: active ? 'rgba(255,255,255,0.2)' : 'var(--border)',
+                      color: active ? '#fff' : 'var(--text-muted)',
+                      borderRadius: 10, padding: '1px 5px', lineHeight: 1.5,
+                    }}>{count}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
 
       {/* ── Empty state ───────────────────────────────────────────────────── */}
       {accounts.length === 0 && (
@@ -171,11 +296,27 @@ export default function AccountsPage() {
         </motion.div>
       )}
 
+      {/* ── Filtered empty ────────────────────────────────────────────────── */}
+      {accounts.length > 0 && visibleAccounts.length === 0 && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          style={{ padding: '60px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+            No {activeFilter} accounts yet.{' '}
+            <button onClick={() => setActiveFilter('all')}
+              style={{ background: 'none', border: 'none', color: 'var(--accent-brand)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+              Show all
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* ── Accounts grid ────────────────────────────────────────────────── */}
-      {accounts.length > 0 && (
+      {visibleAccounts.length > 0 && (
         <div className="grid grid-cols-2 gap-5">
-          {accounts.map((acct, i) => {
-            const recentTxns      = transactions.filter(t => t.account === acct.name).slice(0, 3);
+          {visibleAccounts.map((acct, i) => {
+            const acctTxns        = transactions.filter(t => t.account === acct.name);
+            const recentTxns      = acctTxns.slice(0, 3);
+            const hasTxns         = acctTxns.length > 0;
             const isMenuOpen      = menuOpen === acct.id;
             const isDeleteConfirm = deleteConfirm === acct.id;
 
@@ -231,12 +372,28 @@ export default function AccountsPage() {
                         }}>
                           <Pencil size={14} /> Edit
                         </button>
-                        <button onClick={() => { setDeleteConfirm(acct.id); setMenuOpen(null); }} style={{
-                          display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                          padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
-                          borderRadius: 6, color: 'var(--accent-red)', fontSize: 13,
-                        }}>
-                          <Trash2 size={14} /> Delete
+                        <button
+                          onClick={() => { if (!hasTxns) { setDeleteConfirm(acct.id); setMenuOpen(null); } }}
+                          disabled={hasTxns}
+                          title={hasTxns ? `Cannot delete — ${acctTxns.length} transaction${acctTxns.length !== 1 ? 's' : ''} linked` : undefined}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                            padding: '8px 12px', background: 'none', border: 'none',
+                            cursor: hasTxns ? 'not-allowed' : 'pointer',
+                            borderRadius: 6,
+                            color: hasTxns ? 'var(--text-muted)' : 'var(--accent-red)',
+                            fontSize: 13, opacity: hasTxns ? 0.5 : 1,
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          <span style={{ flex: 1 }}>Delete</span>
+                          {hasTxns && (
+                            <span style={{
+                              fontSize: 10, fontWeight: 600,
+                              background: 'var(--border)', color: 'var(--text-muted)',
+                              borderRadius: 6, padding: '1px 5px',
+                            }}>{acctTxns.length} txn{acctTxns.length !== 1 ? 's' : ''}</span>
+                          )}
                         </button>
                       </motion.div>
                     )}
@@ -325,31 +482,50 @@ export default function AccountsPage() {
                 {/* ── Info section (below card face) ──────────────────────── */}
                 <div style={{ padding: '12px 16px 14px' }}>
 
-                  {/* Delete confirmation banner */}
+                  {/* Delete confirmation / blocked banner */}
                   <AnimatePresence>
                     {isDeleteConfirm && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         style={{
-                          background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
+                          background: hasTxns ? 'rgba(251,146,60,0.08)' : 'rgba(239,68,68,0.08)',
+                          border: `1px solid ${hasTxns ? 'rgba(251,146,60,0.35)' : 'rgba(239,68,68,0.3)'}`,
                           borderRadius: 8, padding: '10px 12px', marginBottom: 10, overflow: 'hidden',
                         }}
                       >
-                        <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text-secondary)' }}>
-                          Delete this account? Linked transactions will remain.
-                        </p>
-                        <div className="flex gap-2">
-                          <button onClick={() => setDeleteConfirm(null)} style={{
-                            fontSize: 12, padding: '4px 10px', borderRadius: 6,
-                            border: '1px solid var(--border)', background: 'none',
-                            cursor: 'pointer', color: 'var(--text-secondary)',
-                          }}>Cancel</button>
-                          <button onClick={() => handleDeleteConfirm(acct.id)} style={{
-                            fontSize: 12, padding: '4px 10px', borderRadius: 6, border: 'none',
-                            background: 'var(--accent-red)', cursor: 'pointer', color: '#fff', fontWeight: 600,
-                          }}>Delete</button>
-                        </div>
+                        {hasTxns ? (
+                          <>
+                            <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>
+                              Cannot delete — this account has {acctTxns.length} linked transaction{acctTxns.length !== 1 ? 's' : ''}.
+                            </p>
+                            <p style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--text-muted)' }}>
+                              Remove or reassign all transactions before deleting this account.
+                            </p>
+                            <button onClick={() => setDeleteConfirm(null)} style={{
+                              fontSize: 12, padding: '4px 10px', borderRadius: 6,
+                              border: '1px solid var(--border)', background: 'none',
+                              cursor: 'pointer', color: 'var(--text-secondary)',
+                            }}>Got it</button>
+                          </>
+                        ) : (
+                          <>
+                            <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text-secondary)' }}>
+                              Permanently delete this account?
+                            </p>
+                            <div className="flex gap-2">
+                              <button onClick={() => setDeleteConfirm(null)} style={{
+                                fontSize: 12, padding: '4px 10px', borderRadius: 6,
+                                border: '1px solid var(--border)', background: 'none',
+                                cursor: 'pointer', color: 'var(--text-secondary)',
+                              }}>Cancel</button>
+                              <button onClick={() => handleDeleteConfirm(acct.id)} style={{
+                                fontSize: 12, padding: '4px 10px', borderRadius: 6, border: 'none',
+                                background: 'var(--accent-red)', cursor: 'pointer', color: '#fff', fontWeight: 600,
+                              }}>Delete</button>
+                            </div>
+                          </>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>

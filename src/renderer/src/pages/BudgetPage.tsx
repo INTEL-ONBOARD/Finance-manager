@@ -19,13 +19,13 @@ const BUDGET_LIMITS: Record<string, number> = {
 
 
 export default function BudgetPage() {
-  const { transactions, monthlyIncome, monthlyExpenses, monthlySaved, savingsRate, currency } = useFinance();
+  const { transactions, monthlyIncome, monthlyExpenses, monthlySaved, savingsRate, currency, selectedMonth } = useFinance();
 
-  const currentMonthPrefix = new Date().toISOString().slice(0, 7); // "YYYY-MM"
-  const currentMonthLabel  = new Date().toLocaleString('default', { month: 'short' }); // "Mar"
+  const [selYear, selMon] = selectedMonth.split('-').map(Number);
+  const currentMonthLabel = new Date(selYear, selMon - 1, 1).toLocaleString('default', { month: 'short' });
 
   const categoryBreakdown = useMemo(() => {
-    const expenses = transactions.filter(t => t.amount < 0 && t.date.startsWith(currentMonthPrefix));
+    const expenses = transactions.filter(t => t.amount < 0 && t.date.startsWith(selectedMonth));
     const totals: Record<string, number> = {};
     expenses.forEach(t => { totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount); });
     return Object.entries(totals).map(([cat, spent]) => ({
@@ -34,7 +34,7 @@ export default function BudgetPage() {
       color: CATEGORY_COLORS[cat] || '#64748b',
       pct: BUDGET_LIMITS[cat] ? Math.round((spent / BUDGET_LIMITS[cat]) * 100) : null,
     })).sort((a, b) => b.spent - a.spent);
-  }, [transactions, currentMonthPrefix]);
+  }, [transactions, selectedMonth]);
 
   const chartData = [{ month: currentMonthLabel, income: Math.round(monthlyIncome), expenses: Math.round(monthlyExpenses) }];
 
@@ -64,13 +64,13 @@ export default function BudgetPage() {
           <div style={{ height: 200, overflow: 'visible' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(45,55,72,0.4)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis dataKey="month" tickLine={false} axisLine={false}
                   tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} />
                 <YAxis tickLine={false} axisLine={false}
                   tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} width={44} />
                 <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, fontSize: 12 }}
-                  labelStyle={{ color: 'var(--text-muted)' }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                  labelStyle={{ color: 'var(--text-muted)' }} cursor={{ fill: 'var(--border)', opacity: 0.3 }} />
                 <Bar dataKey="income" name="Income" fill="#22c55e" radius={[4, 4, 0, 0]} opacity={0.85} />
                 <Bar dataKey="expenses" name="Expenses" fill="#f87171" radius={[4, 4, 0, 0]} opacity={0.85} />
               </BarChart>
@@ -130,7 +130,7 @@ export default function BudgetPage() {
                     {overBudget && <span style={{ fontSize: 10, color: 'var(--accent-red)' }}>Over!</span>}
                   </div>
                 </div>
-                <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
                   <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
                     transition={{ duration: 1, delay: 0.4 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
                     className="absolute inset-y-0 left-0 rounded-full"

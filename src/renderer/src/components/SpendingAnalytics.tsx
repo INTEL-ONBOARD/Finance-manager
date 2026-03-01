@@ -29,19 +29,18 @@ const PieTooltip = ({ active, payload, currency }: any) => {
 type View = 'breakdown' | 'weekly';
 
 export default function SpendingAnalytics() {
-  const { transactions, currency } = useFinance();
+  const { transactions, currency, selectedMonth } = useFinance();
   const [view, setView] = useState<View>('breakdown');
 
   const spendingCategories = useMemo(() => {
-    const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
-    const expenses = transactions.filter(t => t.amount < 0 && t.date.startsWith(currentMonth));
+    const expenses = transactions.filter(t => t.amount < 0 && t.date.startsWith(selectedMonth));
     const totals: Record<string, number> = {};
     expenses.forEach(t => { totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount); });
     const total = Object.values(totals).reduce((s, v) => s + v, 0);
     return Object.entries(totals)
       .map(([name, value]) => ({ name, value, color: CATEGORY_COLORS[name] || '#64748b', pct: Math.round((value / total) * 100) }))
       .sort((a, b) => b.value - a.value);
-  }, [transactions]);
+  }, [transactions, selectedMonth]);
 
   const weeklyData = useMemo(() => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -119,7 +118,7 @@ export default function SpendingAnalytics() {
         <div style={{ height: 160, overflow: 'visible' }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weeklyData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(45,55,72,0.4)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
               <XAxis dataKey="day" tickLine={false} axisLine={false}
                 tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} />
               <YAxis tickLine={false} axisLine={false}
@@ -128,7 +127,7 @@ export default function SpendingAnalytics() {
                 formatter={(v: number | undefined) => [formatCurrency(v ?? 0, currency, 0), 'Spent']}
                 contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, fontSize: 12 }}
                 labelStyle={{ color: 'var(--text-muted)' }} itemStyle={{ color: '#f59e0b' }}
-                cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                cursor={{ fill: 'var(--border)', opacity: 0.3 }} />
               <Bar dataKey="amount" fill="#f59e0b" radius={[4, 4, 0, 0]} opacity={0.85} />
             </BarChart>
           </ResponsiveContainer>

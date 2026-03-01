@@ -53,7 +53,7 @@ export default function NewDMModal({ open, onClose }: Props) {
               <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>New Direct Message</h2>
               <button
                 onClick={onClose}
-                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors"
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors"
                 style={{ color: 'var(--text-muted)' }}
               >
                 <X size={15} />
@@ -87,7 +87,7 @@ export default function NewDMModal({ open, onClose }: Props) {
                 <button
                   key={u.id}
                   onClick={() => handleSelect(u)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-white/5 text-left"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-black/5 text-left"
                 >
                   <Avatar name={u.name} avatar={u.avatar} size={32} />
                   <div>

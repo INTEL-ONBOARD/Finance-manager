@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, AlertCircle, CheckCircle2, Info, LogOut } from 'lucide-react';
+import { Search, Bell, AlertCircle, CheckCircle2, Info, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useFinance } from '@/context/FinanceContext';
 import { useAuth } from '@/context/AuthContext';
@@ -40,6 +40,49 @@ const iconMap = {
   success: { Icon: CheckCircle2, color: '#22c55e' },
   info:    { Icon: Info,         color: '#3b82f6' },
 } as const;
+
+// Pages that show month-scoped data and benefit from the month picker
+const MONTH_PICKER_ROUTES = ['/', '/budget', '/transactions'];
+
+function MonthNavigator() {
+  const { selectedMonth, setSelectedMonth } = useFinance();
+  const [y, m] = selectedMonth.split('-').map(Number);
+
+  const label = new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+  const prev = () => {
+    const d = new Date(y, m - 2, 1);
+    setSelectedMonth(d.toISOString().slice(0, 7));
+  };
+  const next = () => {
+    const d = new Date(y, m, 1);
+    setSelectedMonth(d.toISOString().slice(0, 7));
+  };
+
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const isCurrentMonth = selectedMonth === currentMonthStr;
+  const isFutureMonth = selectedMonth > currentMonthStr;
+
+  return (
+    <div className="flex items-center gap-1" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, padding: '3px 4px' }}>
+      <button onClick={prev} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: '2px 4px', borderRadius: 6 }}>
+        <ChevronLeft size={14} />
+      </button>
+      <span
+        style={{ fontSize: 12, fontWeight: 600, color: isCurrentMonth ? 'var(--accent-brand)' : 'var(--text-primary)', padding: '2px 6px', minWidth: 80, textAlign: 'center', display: 'inline-block' }}
+      >
+        {label}
+      </span>
+      <button
+        onClick={next}
+        disabled={isCurrentMonth || isFutureMonth}
+        style={{ background: 'none', border: 'none', cursor: (isCurrentMonth || isFutureMonth) ? 'default' : 'pointer', color: (isCurrentMonth || isFutureMonth) ? 'var(--border)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', padding: '2px 4px', borderRadius: 6 }}
+      >
+        <ChevronRight size={14} />
+      </button>
+    </div>
+  );
+}
 
 export default function Topbar() {
   const { unreadNotificationCount, notifications, markNotificationRead, markAllNotificationsRead } = useFinance();
@@ -90,6 +133,9 @@ export default function Topbar() {
       </div>
 
       <div className="flex items-center gap-6" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        {/* Month navigator — only on pages that show month-scoped data */}
+        {MONTH_PICKER_ROUTES.includes(location.pathname) && <MonthNavigator />}
+
         {/* Search */}
         <div ref={ref} className="relative w-72">
           <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-colors"
@@ -195,7 +241,7 @@ export default function Topbar() {
                             <button
                               key={n.id}
                               onClick={() => markNotificationRead(n.id)}
-                              className="w-full text-left flex items-start gap-3 px-4 py-3 transition-colors hover:bg-white/3"
+                              className="w-full text-left flex items-start gap-3 px-4 py-3 transition-colors hover:bg-black/5"
                               style={{
                                 opacity: n.read ? 0.5 : 1,
                                 borderTop: i > 0 ? '1px solid var(--border)' : undefined,
@@ -234,7 +280,7 @@ export default function Topbar() {
                       <Link
                         to="/notifications"
                         onClick={() => setNotifOpen(false)}
-                        className="flex items-center justify-center py-2.5 transition-colors hover:bg-white/3"
+                        className="flex items-center justify-center py-2.5 transition-colors hover:bg-black/5"
                         style={{ fontSize: 12.5, color: 'var(--accent-brand)', fontWeight: 500, textDecoration: 'none' }}
                       >
                         View all notifications →

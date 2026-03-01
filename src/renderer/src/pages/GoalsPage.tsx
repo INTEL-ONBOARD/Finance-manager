@@ -11,7 +11,7 @@ const iconMap: Record<string, any> = { Umbrella, Plane, Laptop, Home, Car, Gradu
 
 function ProgressBar({ pct, color, delay }: { pct: number; color: string; delay: number }) {
   return (
-    <div className="relative h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+    <div className="relative h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
       <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(pct, 100)}%` }}
         transition={{ duration: 1.1, delay, ease: [0.16, 1, 0.3, 1] }}
         className="absolute inset-y-0 left-0 rounded-full"
@@ -115,7 +115,7 @@ export default function GoalsPage() {
                           {formatCurrency(goal.current, currency, 0)}
                         </span>
                         <button onClick={() => { setEditId(goal.id); setEditAmount(String(goal.current)); }}
-                          className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/5 transition-colors"
+                          className="w-6 h-6 flex items-center justify-center rounded hover:bg-black/5 transition-colors"
                           style={{ color: 'var(--text-muted)' }}>
                           <Edit2 size={11} />
                         </button>

@@ -14,7 +14,27 @@ import { formatCurrency } from '@/utils/formatCurrency';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STEPS = ['Select Account', 'Upload File', 'Preview & Import'] as const;
+const STEPS = ['Select Account', 'Select Template', 'Upload File', 'Preview & Import'] as const;
+
+interface Template {
+  id: string;
+  bank: string;
+  name: string;
+  description: string;
+  fileTypes: string;
+  badge?: string;
+}
+
+const TEMPLATES: Template[] = [
+  {
+    id: 'sampath-vishwa',
+    bank: 'Sampath Bank',
+    name: 'Vishwa Internet Banking',
+    description: 'Standard XLSX export from Sampath Bank\'s Vishwa online portal. Columns: Tran Date · Particulars · DR/CR · Amount · Balance.',
+    fileTypes: 'XLSX / XLS',
+    badge: 'Supported',
+  },
+];
 
 const CATEGORIES: TransactionCategory[] = [
   'Salary', 'Freelance', 'Investment', 'Refund',
@@ -31,10 +51,11 @@ interface Props {
 }
 
 export default function ImportStatementModal({ open, onClose }: Props) {
-  const { accounts, addTransactions, currency } = useFinance();
+  const { accounts, transactions, addTransactions, currency } = useFinance();
 
   const [step, setStep] = useState(0);
   const [selectedAccountId, setSelectedAccountId] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [fileName, setFileName] = useState('');
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
@@ -42,6 +63,8 @@ export default function ImportStatementModal({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [imported, setImported] = useState(false);
+  const [importedCount, setImportedCount] = useState(0);
+  const [skippedDupes, setSkippedDupes] = useState(0);
 
   // Only bank-linked checking/savings/credit accounts can receive imports
   const eligibleAccounts = useMemo(
@@ -56,12 +79,15 @@ export default function ImportStatementModal({ open, onClose }: Props) {
   const resetAndClose = () => {
     setStep(0);
     setSelectedAccountId('');
+    setSelectedTemplateId('');
     setFileName('');
     setParseResult(null);
     setRows([]);
     setCategoryOverrides({});
     setError('');
     setImported(false);
+    setImportedCount(0);
+    setSkippedDupes(0);
     onClose();
   };
 
@@ -73,7 +99,15 @@ export default function ImportStatementModal({ open, onClose }: Props) {
     setStep(1);
   };
 
-  // ── Step 1: file picker ────────────────────────────────────────────────────
+  // ── Step 1: template selection ─────────────────────────────────────────────
+
+  const handleNext1 = () => {
+    if (!selectedTemplateId) { setError('Please select a statement template.'); return; }
+    setError('');
+    setStep(2);
+  };
+
+  // ── Step 2: file picker ────────────────────────────────────────────────────
 
   const handlePickFile = async () => {
     setError('');
@@ -90,11 +124,11 @@ export default function ImportStatementModal({ open, onClose }: Props) {
       const base64 = await window.electron?.dialog.readFile(filePath);
       if (!base64) throw new Error('Could not read file.');
 
-      const result = parseStatement(base64, name);
+      const result = parseStatement(base64, name, selectedTemplateId);
       setParseResult(result);
       setRows(result.rows);
       setCategoryOverrides({});
-      setStep(2);
+      setStep(3);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to parse file.');
     } finally {
@@ -109,16 +143,40 @@ export default function ImportStatementModal({ open, onClose }: Props) {
 
   const handleImport = () => {
     if (!selectedAccount) return;
-    const txns = parsedRowsToTransactions(
+
+    // Build a set of existing transaction fingerprints to detect duplicates
+    const existingKeys = new Set(
+      transactions.map(t => `${t.date}|${t.name}|${t.amount}|${t.account}`)
+    );
+
+    const allTxns = parsedRowsToTransactions(
       rows.map((r, i) => ({ ...r, category: effectiveCategory(i) })),
       selectedAccount.name,
     );
-    addTransactions(txns);
+
+    const newTxns = allTxns.filter(
+      t => !existingKeys.has(`${t.date}|${t.name}|${t.amount}|${t.account}`)
+    );
+
+    if (newTxns.length > 0) addTransactions(newTxns);
+    setImportedCount(newTxns.length);
+    setSkippedDupes(allTxns.length - newTxns.length);
     setImported(true);
   };
 
   const incomeTotal  = rows.filter(r => r.amount > 0).reduce((s, r) => s + r.amount, 0);
   const expenseTotal = rows.filter(r => r.amount < 0).reduce((s, r) => s + Math.abs(r.amount), 0);
+
+  // Count how many parsed rows are not already in the DB (for the preview step button label)
+  const existingKeysPreview = useMemo(() => new Set(
+    transactions.map(t => `${t.date}|${t.name}|${t.amount}|${t.account}`)
+  ), [transactions]);
+  const newRowCount = useMemo(() => {
+    if (!selectedAccount) return rows.length;
+    return rows.filter(
+      r => !existingKeysPreview.has(`${r.date}|${r.particulars}|${r.amount}|${selectedAccount.name}`)
+    ).length;
+  }, [rows, existingKeysPreview, selectedAccount]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -154,7 +212,7 @@ export default function ImportStatementModal({ open, onClose }: Props) {
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             style={{
               position: 'relative', zIndex: 1, pointerEvents: 'auto',
-              width: step === 2 ? 860 : 540,
+              width: step === 3 ? 860 : 580,
               maxHeight: '88vh',
               background: 'var(--bg-card)',
               borderRadius: 16,
@@ -195,29 +253,32 @@ export default function ImportStatementModal({ open, onClose }: Props) {
               background: 'var(--bg-primary)',
             }}>
               {STEPS.map((label, i) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div key={label} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none', minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                     <div style={{
-                      width: 24, height: 24, borderRadius: '50%',
-                      background: i <= step ? 'var(--accent-brand)' : 'var(--border)',
+                      width: 22, height: 22, borderRadius: '50%',
+                      background: i < step ? 'var(--accent-brand)' : i === step ? 'var(--accent-brand)' : 'var(--border)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 11, fontWeight: 700,
+                      fontSize: 10, fontWeight: 700,
                       color: i <= step ? '#fff' : 'var(--text-muted)',
                       flexShrink: 0,
                     }}>
-                      {i < step ? <CheckCircle2 size={13} /> : i + 1}
+                      {i < step ? <CheckCircle2 size={12} /> : i + 1}
                     </div>
-                    <span style={{
-                      fontSize: 13,
-                      fontWeight: i === step ? 600 : 400,
-                      color: i === step ? 'var(--text-primary)' : 'var(--text-muted)',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {label}
-                    </span>
+                    {/* Only show label for active step and completed steps */}
+                    {i === step && (
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                        {label}
+                      </span>
+                    )}
+                    {i < step && (
+                      <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                        {label}
+                      </span>
+                    )}
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div style={{ flex: 1, height: 1, background: 'var(--border)', margin: '0 12px' }} />
+                    <div style={{ flex: 1, height: 1, background: i < step ? 'var(--accent-brand)' : 'var(--border)', margin: '0 8px', minWidth: 8 }} />
                   )}
                 </div>
               ))}
@@ -283,8 +344,67 @@ export default function ImportStatementModal({ open, onClose }: Props) {
                 </div>
               )}
 
-              {/* Step 1: Upload file */}
+              {/* Step 1: Select template */}
               {step === 1 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    Choose the statement format that matches how you exported your file from your bank's online portal.
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {TEMPLATES.map(t => {
+                      const selected = selectedTemplateId === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => { setSelectedTemplateId(t.id); setError(''); }}
+                          style={{
+                            display: 'flex', alignItems: 'flex-start', gap: 14,
+                            padding: '16px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                            border: selected ? '2px solid var(--accent-brand)' : '1px solid var(--border)',
+                            background: selected ? 'rgba(99,102,241,0.08)' : 'var(--bg-primary)',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          <div style={{
+                            width: 38, height: 38, borderRadius: 8, flexShrink: 0, marginTop: 2,
+                            background: selected ? 'rgba(99,102,241,0.15)' : 'var(--border)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <FileSpreadsheet size={18} style={{ color: selected ? 'var(--accent-brand)' : 'var(--text-muted)' }} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</span>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent-brand)', background: 'rgba(99,102,241,0.12)', padding: '2px 7px', borderRadius: 20, letterSpacing: '0.04em' }}>
+                                {t.bank}
+                              </span>
+                              {t.badge && (
+                                <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--accent-green)', background: 'rgba(34,197,94,0.1)', padding: '2px 7px', borderRadius: 20 }}>
+                                  {t.badge}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>{t.description}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>File type: <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{t.fileTypes}</span></div>
+                          </div>
+                          {selected && <CheckCircle2 size={18} color="var(--accent-brand)" style={{ flexShrink: 0, marginTop: 10 }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--bg-primary)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
+                    More bank templates coming soon. Can't find yours?{' '}
+                    <span style={{ color: 'var(--accent-brand)', cursor: 'default' }}>Request a template →</span>
+                  </div>
+
+                  {error && <span style={{ fontSize: 13, color: 'var(--accent-red)' }}>{error}</span>}
+                </div>
+              )}
+
+              {/* Step 2: Upload file */}
+              {step === 2 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center', paddingTop: 12 }}>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 4 }}>
@@ -333,8 +453,8 @@ export default function ImportStatementModal({ open, onClose }: Props) {
                 </div>
               )}
 
-              {/* Step 2: Preview table */}
-              {step === 2 && !imported && (
+              {/* Step 3: Preview table */}
+              {step === 3 && !imported && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {/* Summary cards */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
@@ -353,6 +473,14 @@ export default function ImportStatementModal({ open, onClose }: Props) {
                   {parseResult && parseResult.skipped > 0 && (
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: '8px 12px', borderRadius: 8, background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
                       {parseResult.skipped} rows were skipped (empty description or zero amount).
+                    </div>
+                  )}
+
+                  {rows.length > 0 && newRowCount < rows.length && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', fontSize: 13, color: 'var(--text-secondary)' }}>
+                      <AlertCircle size={15} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                      {rows.length - newRowCount} of these {rows.length} transactions already exist and will be skipped.
+                      {newRowCount === 0 ? ' Nothing new to import.' : ` ${newRowCount} new transaction${newRowCount !== 1 ? 's' : ''} will be added.`}
                     </div>
                   )}
 
@@ -432,11 +560,16 @@ export default function ImportStatementModal({ open, onClose }: Props) {
                   <CheckCircle2 size={52} style={{ color: 'var(--accent-green)' }} />
                   <div>
                     <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
-                      {rows.length} transactions imported!
+                      {importedCount} transaction{importedCount !== 1 ? 's' : ''} imported!
                     </div>
                     <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-                      All transactions have been added to <strong style={{ color: 'var(--text-primary)' }}>{selectedAccount?.name}</strong>.
+                      Added to <strong style={{ color: 'var(--text-primary)' }}>{selectedAccount?.name}</strong>.
                     </div>
+                    {skippedDupes > 0 && (
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
+                        {skippedDupes} duplicate{skippedDupes !== 1 ? 's' : ''} skipped (already exist).
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={resetAndClose}
@@ -480,6 +613,22 @@ export default function ImportStatementModal({ open, onClose }: Props) {
                   )}
                   {step === 1 && (
                     <button
+                      onClick={handleNext1}
+                      disabled={!selectedTemplateId}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '9px 20px', borderRadius: 8, border: 'none',
+                        background: selectedTemplateId ? 'var(--accent-brand)' : 'var(--border)',
+                        color: selectedTemplateId ? '#fff' : 'var(--text-muted)',
+                        fontSize: 14, fontWeight: 600,
+                        cursor: selectedTemplateId ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      Continue <ChevronRight size={16} />
+                    </button>
+                  )}
+                  {step === 2 && (
+                    <button
                       onClick={handlePickFile}
                       disabled={loading}
                       style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, border: 'none', background: 'var(--accent-brand)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
@@ -487,12 +636,14 @@ export default function ImportStatementModal({ open, onClose }: Props) {
                       <Upload size={16} /> Select File
                     </button>
                   )}
-                  {step === 2 && (
+                  {step === 3 && (
                     <button
                       onClick={handleImport}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, border: 'none', background: 'var(--accent-green)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                      disabled={newRowCount === 0}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, border: 'none', background: newRowCount > 0 ? 'var(--accent-green)' : 'var(--border)', color: newRowCount > 0 ? '#fff' : 'var(--text-muted)', fontSize: 14, fontWeight: 600, cursor: newRowCount > 0 ? 'pointer' : 'not-allowed' }}
                     >
-                      <CheckCircle2 size={16} /> Import {rows.length} Transactions
+                      <CheckCircle2 size={16} />
+                      {newRowCount === 0 ? 'All already imported' : `Import ${newRowCount} Transaction${newRowCount !== 1 ? 's' : ''}`}
                     </button>
                   )}
                 </div>

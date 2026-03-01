@@ -16,7 +16,6 @@ const navItems = [
   { label: 'Budget', href: '/budget', icon: PieChart },
   { label: 'Goals', href: '/goals', icon: Target },
   { label: 'Bills', href: '/bills', icon: CalendarDays },
-  { label: 'Investments', href: '/investments', icon: TrendingUp },
 ];
 
 const bottomItems = [

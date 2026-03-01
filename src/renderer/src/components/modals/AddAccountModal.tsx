@@ -198,23 +198,30 @@ export default function AddAccountModal({ open, onClose, editAccount }: Props) {
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             style={{
               position: 'fixed',
-              top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
+              top: 0, left: 0, right: 0, bottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              zIndex: 1000,
+            }}
+          >
+          <div style={{
               width: 760,
               maxHeight: '85vh',
               background: 'var(--bg-card)',
               borderRadius: 16,
               border: '1px solid var(--border)',
-              zIndex: 1000,
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
+              pointerEvents: 'auto',
             }}
           >
             {/* Header */}
@@ -484,7 +491,7 @@ export default function AddAccountModal({ open, onClose, editAccount }: Props) {
                 {/* Color picker */}
                 <div>
                   <label style={labelStyle}>Color</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 12, padding: '4px 2px' }}>
                     {COLORS.map(c => (
                       <button
                         key={c}
@@ -492,9 +499,9 @@ export default function AddAccountModal({ open, onClose, editAccount }: Props) {
                         style={{
                           width: 28, height: 28, borderRadius: '50%',
                           background: c, border: 'none', cursor: 'pointer',
-                          transform: form.color === c ? 'scale(1.25)' : 'scale(1)',
+                          transform: form.color === c ? 'scale(1.2)' : 'scale(1)',
                           outline: form.color === c ? `2px solid ${c}` : 'none',
-                          outlineOffset: 2,
+                          outlineOffset: 3,
                           transition: 'transform 0.15s',
                           flexShrink: 0,
                         }}
@@ -538,6 +545,7 @@ export default function AddAccountModal({ open, onClose, editAccount }: Props) {
                 {editAccount ? 'Save Changes' : 'Add Account'}
               </button>
             </div>
+          </div>
           </motion.div>
         </>
       )}

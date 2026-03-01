@@ -8,6 +8,7 @@ interface UserSettings {
   currency?: string;
   timezone?: string;
   notifs?: {
+    systemNotifications: boolean;
     billReminders: boolean;
     goalProgress: boolean;
     largeTransactions: boolean;

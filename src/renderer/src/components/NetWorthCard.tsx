@@ -75,11 +75,11 @@ export default function NetWorthCard() {
                 <stop offset="100%" stopColor="#4ade80" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(45,55,72,0.4)" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis dataKey="month" tickLine={false} axisLine={false}
               tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} />
             <YAxis hide domain={['auto', 'auto']} />
-            <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1 }} />
+            <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
             <Area type="monotone" dataKey="value" stroke="#4ade80" strokeWidth={2}
               fill="url(#nwGrad)" dot={false} activeDot={{ r: 4, fill: '#4ade80', strokeWidth: 0 }} />
           </AreaChart>

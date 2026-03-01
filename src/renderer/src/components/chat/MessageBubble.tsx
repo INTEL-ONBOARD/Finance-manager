@@ -1,5 +1,6 @@
 import Avatar from './Avatar';
 import type { ChatMessage } from '@/types/chat';
+import { useChat } from '@/context/ChatContext';
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -12,6 +13,9 @@ function formatTime(iso: string): string {
 }
 
 export default function MessageBubble({ message, isSelf }: MessageBubbleProps) {
+  const { allUsers } = useChat();
+  const senderAvatar = allUsers.find(u => u.id === message.senderId)?.avatar ?? null;
+
   if (isSelf) {
     return (
       <div className="flex justify-end mb-2 px-4">
@@ -37,7 +41,7 @@ export default function MessageBubble({ message, isSelf }: MessageBubbleProps) {
 
   return (
     <div className="flex items-end gap-2 mb-2 px-4">
-      <Avatar name={message.senderName} size={28} />
+      <Avatar name={message.senderName} avatar={senderAvatar} size={28} />
       <div style={{ maxWidth: '68%' }}>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 3, paddingLeft: 2 }}>
           {message.senderName}

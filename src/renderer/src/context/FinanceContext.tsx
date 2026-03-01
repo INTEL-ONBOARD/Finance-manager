@@ -6,6 +6,7 @@ import { formatCurrency } from '@/utils/formatCurrency';
 interface UserSettings {
   currency?: string;
   notifs?: {
+    systemNotifications: boolean;
     billReminders: boolean;
     goalProgress: boolean;
     largeTransactions: boolean;
@@ -269,13 +270,19 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
   const monthlySaved    = monthlyIncome - monthlyExpenses;
   const savingsRate     = monthlyIncome > 0 ? Math.round((monthlySaved / monthlyIncome) * 100) : 0;
 
-  const checkingAndSavings = accounts.filter(a => a.type !== 'credit').reduce((s, a) => s + a.balance, 0);
+  // Compute each account's live balance = opening balance + all transaction amounts for that account
+  const accountsWithBalance = accounts.map(a => {
+    const txnSum = transactions.filter(t => t.account === a.name).reduce((s, t) => s + t.amount, 0);
+    return { ...a, balance: a.balance + txnSum };
+  });
+
+  const checkingAndSavings = accountsWithBalance.filter(a => a.type !== 'credit').reduce((s, a) => s + a.balance, 0);
   const totalBalance        = checkingAndSavings;
-  const totalAssets         = accounts.filter(a => a.balance > 0).reduce((s, a) => s + a.balance, 0);
-  const totalLiabilities    = accounts.filter(a => a.balance < 0).reduce((s, a) => s + Math.abs(a.balance), 0);
+  const totalAssets         = accountsWithBalance.filter(a => a.balance > 0).reduce((s, a) => s + a.balance, 0);
+  const totalLiabilities    = accountsWithBalance.filter(a => a.balance < 0).reduce((s, a) => s + Math.abs(a.balance), 0);
   const netWorth            = totalAssets - totalLiabilities;
 
-  const creditCard         = accounts.find(a => a.type === 'credit');
+  const creditCard         = accountsWithBalance.find(a => a.type === 'credit');
   const creditUtilization  = creditCard && creditCard.limit
     ? Math.round((Math.abs(creditCard.balance) / creditCard.limit) * 100)
     : 0;
@@ -293,6 +300,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
     window.electron?.db.notifications.add(userId, doc);
     const shouldNotify = (() => {
       if (!settings?.notifs) return true; // no prefs set → default to on
+      if (settings.notifs.systemNotifications === false) return false; // master switch off
       if (n.type === 'alert')   return settings.notifs.billReminders !== false;
       if (n.type === 'info')    return settings.notifs.monthlyReport !== false;
       if (n.type === 'success') return settings.notifs.goalProgress !== false;
@@ -435,7 +443,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
 
   return (
     <FinanceContext.Provider value={{
-      transactions, goals, bills, accounts, notifications,
+      transactions, goals, bills, accounts: accountsWithBalance, notifications,
       currency, setCurrency,
       selectedMonth, setSelectedMonth,
       addTransaction, addTransactions, updateTransaction, deleteTransaction,

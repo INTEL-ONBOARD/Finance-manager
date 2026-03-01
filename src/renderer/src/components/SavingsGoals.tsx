@@ -12,7 +12,7 @@ const iconMap: Record<string, any> = {
 
 function ProgressBar({ pct, color, delay }: { pct: number; color: string; delay: number }) {
   return (
-    <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+    <div className="relative h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
       <motion.div
         initial={{ width: 0 }} animate={{ width: `${Math.min(pct, 100)}%` }}
         transition={{ duration: 1, delay, ease: [0.16, 1, 0.3, 1] }}

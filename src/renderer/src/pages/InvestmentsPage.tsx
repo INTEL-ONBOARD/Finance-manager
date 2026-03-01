@@ -55,14 +55,14 @@ export default function InvestmentsPage() {
                   <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(45,55,72,0.4)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
               <XAxis dataKey="month" tickLine={false} axisLine={false}
                 tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} />
               <YAxis tickLine={false} axisLine={false}
                 tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} width={48} />
               <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, fontSize: 12 }}
                 formatter={(v: number | undefined) => [formatCurrency(v ?? 0, currency, 0), 'Value']}
-                labelStyle={{ color: 'var(--text-muted)' }} cursor={{ stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1 }} />
+                labelStyle={{ color: 'var(--text-muted)' }} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
               <Area type="monotone" dataKey="value" stroke="#a78bfa" strokeWidth={2} fill="url(#portGrad)"
                 dot={false} activeDot={{ r: 4, fill: '#a78bfa', strokeWidth: 0 }} />
             </AreaChart>

@@ -59,7 +59,7 @@ export default function BillsPage() {
               {paid.length} / {bills.length} bills paid
             </span>
           </div>
-          <div className="relative h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div className="relative h-3 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
             <motion.div initial={{ width: 0 }} animate={{ width: `${totalMonthly > 0 ? Math.round((totalPaid / totalMonthly) * 100) : 0}%` }}
               transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="absolute inset-y-0 left-0 rounded-full"
@@ -101,7 +101,7 @@ export default function BillsPage() {
                 transition={{ delay: 0.25 + i * 0.04 }}
                 className="flex items-center gap-3 p-3 rounded-xl transition-all"
                 style={{
-                  background: bill.paid ? 'rgba(34,197,94,0.04)' : overdue ? 'rgba(248,113,113,0.06)' : 'rgba(255,255,255,0.02)',
+                  background: bill.paid ? 'rgba(34,197,94,0.04)' : overdue ? 'rgba(248,113,113,0.06)' : 'transparent',
                   border: `1px solid ${bill.paid ? 'rgba(34,197,94,0.12)' : overdue ? 'rgba(248,113,113,0.2)' : 'var(--border)'}`,
                 }}
               >
@@ -138,7 +138,7 @@ export default function BillsPage() {
                   {bill.paid ? <Check size={14} /> : <Clock size={13} />}
                 </button>
                 <button onClick={() => setEditBill(bill)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors shrink-0"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors shrink-0"
                   style={{ color: 'var(--text-muted)' }}
                   title="Edit bill"
                 >

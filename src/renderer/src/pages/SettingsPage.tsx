@@ -62,8 +62,8 @@ export default function SettingsPage() {
 
   // Notifications
   const [notifs, setNotifs] = useState({
-    billReminders: true, goalProgress: true, largeTransactions: true,
-    monthlyReport: true, weeklyDigest: false,
+    systemNotifications: true, billReminders: true, goalProgress: true,
+    largeTransactions: true, monthlyReport: true, weeklyDigest: false,
   });
   const notifSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -117,7 +117,7 @@ export default function SettingsPage() {
             timezone: (s as { timezone?: string }).timezone ?? 'Asia/Colombo',
           });
           const n = (s as { notifs?: typeof notifs }).notifs;
-          if (n) setNotifs(n);
+          if (n) setNotifs(prev => ({ ...prev, ...n }));
           const av = (s as { avatar?: string }).avatar;
           if (av) updateUser({ avatar: av });
         }
@@ -234,8 +234,8 @@ export default function SettingsPage() {
     setClearing(true);
     try {
       await window.electron?.db.clearUserData(user!.id);
-      setClearDone(true);
-      setTimeout(() => setClearDone(false), 2500);
+      // Reload the renderer so FinanceContext re-hydrates from the now-empty DB
+      window.location.reload();
     } finally {
       setClearing(false);
       setClearConfirm(false);
@@ -436,6 +436,7 @@ export default function SettingsPage() {
 
                 <div className="flex flex-col">
                   {[
+                    { key: 'systemNotifications', label: 'System Notifications', desc: 'Show OS desktop popups for in-app notifications', icon: Bell },
                     { key: 'billReminders',     label: 'Bill Reminders',     desc: 'Get notified 3 days before a bill is due',          icon: Receipt },
                     { key: 'goalProgress',      label: 'Goal Milestones',    desc: 'Alerts when you hit 25%, 50%, 75%, 100% of a goal', icon: Target },
                     { key: 'largeTransactions', label: 'Large Transactions', desc: 'Alerts for any single transaction over $200',        icon: CreditCard },
@@ -448,10 +449,10 @@ export default function SettingsPage() {
                         initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
                         className="flex items-center justify-between py-4"
-                        style={{ borderBottom: i < 4 ? '1px solid var(--border)' : 'none' }}>
+                        style={{ borderBottom: i < 5 ? '1px solid var(--border)' : 'none' }}>
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                            style={{ background: on ? 'var(--accent-brand-dim)' : 'rgba(255,255,255,0.03)', border: `1px solid ${on ? 'rgba(74,222,128,0.25)' : 'var(--border)'}` }}>
+                            style={{ background: on ? 'var(--accent-brand-dim)' : 'var(--bg-card)', border: `1px solid ${on ? 'rgba(74,222,128,0.25)' : 'var(--border)'}` }}>
                             <item.icon size={14} style={{ color: on ? 'var(--accent-brand)' : 'var(--text-muted)' }} />
                           </div>
                           <div>
@@ -488,12 +489,12 @@ export default function SettingsPage() {
 
                   {/* Change Password */}
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                    className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
+                    className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'var(--bg-primary)' }}>
                     <button
                       onClick={() => { setShowChangePw(v => !v); setPwError(''); setPwDone(false); }}
                       className="flex items-center gap-4 p-4 text-left w-full group">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                         <Lock size={16} style={{ color: pwDone ? 'var(--accent-brand)' : 'var(--text-muted)' }} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -565,9 +566,9 @@ export default function SettingsPage() {
                   {/* 2FA — Coming Soon */}
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                     className="flex items-center gap-4 p-4 rounded-2xl"
-                    style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)', opacity: 0.6 }}>
+                    style={{ border: '1px solid var(--border)', background: 'var(--bg-primary)', opacity: 0.6 }}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                       <Smartphone size={16} style={{ color: 'var(--text-muted)' }} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -584,10 +585,10 @@ export default function SettingsPage() {
 
                   {/* Active Sessions */}
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                    className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
+                    className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--border)', background: 'var(--bg-primary)' }}>
                     <div className="flex items-center gap-4 p-4">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                         <Shield size={16} style={{ color: 'var(--text-muted)' }} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -727,7 +728,7 @@ export default function SettingsPage() {
                   ].map(plan => (
                     <div key={plan.name} className="p-5 rounded-2xl flex flex-col gap-4"
                       style={{
-                        background: plan.current ? 'rgba(255,255,255,0.02)' : 'linear-gradient(135deg, rgba(74,222,128,0.05), rgba(96,165,250,0.05))',
+                        background: plan.current ? 'var(--bg-primary)' : 'linear-gradient(135deg, rgba(74,222,128,0.05), rgba(96,165,250,0.05))',
                         border: `1px solid ${plan.current ? 'var(--border)' : 'rgba(74,222,128,0.3)'}`,
                       }}>
                       <div>
@@ -735,7 +736,7 @@ export default function SettingsPage() {
                           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{plan.name}</span>
                           {plan.current && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                              style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                              style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
                               Current
                             </span>
                           )}
@@ -756,7 +757,7 @@ export default function SettingsPage() {
                         {plan.features.map(f => (
                           <li key={f} className="flex items-center gap-2.5">
                             <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                              style={{ background: plan.current ? 'rgba(255,255,255,0.05)' : 'rgba(74,222,128,0.15)' }}>
+                              style={{ background: plan.current ? 'var(--bg-card)' : 'rgba(74,222,128,0.15)' }}>
                               <Check size={9} style={{ color: plan.current ? 'var(--text-muted)' : 'var(--accent-brand)' }} />
                             </div>
                             <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{f}</span>
@@ -899,7 +900,7 @@ export default function SettingsPage() {
                         onClick={() => window.electron?.updater.check()}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
                         style={{
-                          background: 'rgba(255,255,255,0.05)',
+                          background: 'var(--bg-card)',
                           color: updateStatus === 'checking' ? 'var(--text-muted)' : 'var(--text-primary)',
                           border: '1px solid var(--border)',
                           cursor: updateStatus === 'checking' ? 'not-allowed' : 'pointer',

@@ -161,13 +161,16 @@ export function parsedRowsToTransactions(
 
 // ─── Auto-detect entry point ───────────────────────────────────────────────────
 
-/** Auto-detect file format from extension and parse. Throws if unsupported. */
-export function parseStatement(base64: string, fileName: string): ParseResult {
+/** Parse using an explicit template ID. Throws if template or file type unsupported. */
+export function parseStatement(base64: string, fileName: string, templateId?: string): ParseResult {
   const ext = fileName.split('.').pop()?.toLowerCase();
-  if (ext === 'xlsx' || ext === 'xls') {
-    return parseSampathXLSX(base64);
+  if (ext !== 'xlsx' && ext !== 'xls') {
+    throw new Error(`Unsupported file type: .${ext ?? 'unknown'}. Please upload an XLSX or XLS file.`);
   }
-  throw new Error(
-    `Unsupported file type: .${ext ?? 'unknown'}. Please upload an XLSX or XLS file.`
-  );
+  // All current templates use the same Sampath XLSX format; extend here as new templates are added.
+  switch (templateId) {
+    case 'sampath-vishwa':
+    default:
+      return parseSampathXLSX(base64);
+  }
 }

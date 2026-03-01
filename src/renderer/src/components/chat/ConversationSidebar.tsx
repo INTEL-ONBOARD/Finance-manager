@@ -44,7 +44,7 @@ export default function ConversationSidebar() {
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Community</span>
         <button
           onClick={() => { setDmModalOpen(true); refreshUsers(); }}
-          className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors"
+          className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors"
           style={{ color: 'var(--text-muted)' }}
           title="New Direct Message"
         >

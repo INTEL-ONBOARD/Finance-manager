@@ -20,7 +20,7 @@ export default function NotificationsPage() {
         </div>
         {unread > 0 && (
           <button onClick={markAllNotificationsRead}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-white/5"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5"
             style={{ color: 'var(--accent-blue)', border: '1px solid rgba(96,165,250,0.2)' }}>
             <Check size={13} /> Mark all read
           </button>
@@ -44,7 +44,7 @@ export default function NotificationsPage() {
                   transition={{ delay: i * 0.05 }}
                   className="flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-all"
                   style={{
-                    background: n.read ? 'transparent' : 'rgba(255,255,255,0.02)',
+                    background: n.read ? 'transparent' : 'var(--bg-card-hover)',
                     border: `1px solid ${n.read ? 'var(--border)' : 'var(--border-light)'}`,
                     opacity: n.read ? 0.6 : 1,
                   }}
