@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,6 +66,8 @@ interface FinanceContextType {
   bills: Bill[];
   accounts: Account[];
   notifications: Notification[];
+  currency: string;
+  setCurrency: (c: string) => void;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   deleteTransaction: (id: string) => void;
   addGoal: (g: Omit<SavingsGoal, 'id'>) => void;
@@ -90,7 +93,8 @@ function buildNotifications(
   bills: Bill[],
   goals: SavingsGoal[],
   transactions: Transaction[],
-  existingIds: Set<string>
+  existingIds: Set<string>,
+  currency: string
 ): Array<Omit<Notification, 'read'>> {
   const results: Array<Omit<Notification, 'read'>> = [];
   const now = new Date();
@@ -103,11 +107,11 @@ function buildNotifications(
     const id = `notif_bill_due_${bill.id}_${ym}`;
     if (existingIds.has(id)) continue;
     if (daysUntil < 0) {
-      results.push({ id, title: `${bill.name} is overdue!`, body: `$${bill.amount} was due on the ${bill.dueDay}th.`, time: 'Just now', type: 'alert' });
+      results.push({ id, title: `${bill.name} is overdue!`, body: `${formatCurrency(bill.amount, currency)} was due on the ${bill.dueDay}th.`, time: 'Just now', type: 'alert' });
     } else if (daysUntil === 0) {
-      results.push({ id, title: `${bill.name} due today`, body: `$${bill.amount} is due today.`, time: 'Just now', type: 'alert' });
+      results.push({ id, title: `${bill.name} due today`, body: `${formatCurrency(bill.amount, currency)} is due today.`, time: 'Just now', type: 'alert' });
     } else if (daysUntil <= 3) {
-      results.push({ id, title: `${bill.name} due in ${daysUntil} day${daysUntil > 1 ? 's' : ''}`, body: `$${bill.amount} is due on the ${bill.dueDay}th.`, time: 'Just now', type: 'alert' });
+      results.push({ id, title: `${bill.name} due in ${daysUntil} day${daysUntil > 1 ? 's' : ''}`, body: `${formatCurrency(bill.amount, currency)} is due on the ${bill.dueDay}th.`, time: 'Just now', type: 'alert' });
     }
   }
 
@@ -122,8 +126,8 @@ function buildNotifications(
           id,
           title: milestone === 100 ? `${goal.name} goal reached!` : `${goal.name} is ${milestone}% complete`,
           body: milestone === 100
-            ? `You've hit your $${goal.target.toLocaleString()} target!`
-            : `$${goal.current.toLocaleString()} of $${goal.target.toLocaleString()} saved.`,
+            ? `You've hit your ${formatCurrency(goal.target, currency, 0)} target!`
+            : `${formatCurrency(goal.current, currency, 0)} of ${formatCurrency(goal.target, currency, 0)} saved.`,
           time: 'Just now',
           type: 'success',
         });
@@ -139,7 +143,7 @@ function buildNotifications(
     results.push({
       id,
       title: `Large transaction: ${txn.name}`,
-      body: `$${Math.abs(txn.amount).toLocaleString()} ${txn.amount < 0 ? 'expense' : 'income'} on ${txn.account}.`,
+      body: `${formatCurrency(Math.abs(txn.amount), currency, 0)} ${txn.amount < 0 ? 'expense' : 'income'} on ${txn.account}.`,
       time: 'Just now',
       type: txn.amount < 0 ? 'alert' : 'success',
     });
@@ -178,6 +182,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
   const [bills, setBills] = useState<Bill[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [currency, setCurrency] = useState<string>('USD');
   const [dbError, setDbError] = useState<string | null>(null);
 
   // Re-hydrate whenever the logged-in user changes
@@ -188,8 +193,13 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
       setBills([]);
       setAccounts([]);
       setNotifications([]);
+      setCurrency('USD');
       return;
     }
+    // Load currency setting separately (settings.get returns a single doc)
+    window.electron.db.settings?.get(userId).then((s: Record<string, unknown> | null) => {
+      setCurrency((s?.currency as string) ?? 'USD');
+    }).catch(() => { /* keep default USD */ });
     Promise.all([
       window.electron.db.transactions.getAll(userId),
       window.electron.db.goals.getAll(userId),
@@ -204,7 +214,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
       setNotifications(notifs as Notification[]);
       // Generate smart notifications from live data
       const existingIds = new Set((notifs as Notification[]).map(n => n.id));
-      const generated = buildNotifications(bs as Bill[], gs as SavingsGoal[], txns as Transaction[], existingIds);
+      const generated = buildNotifications(bs as Bill[], gs as SavingsGoal[], txns as Transaction[], existingIds, currency);
       for (const n of generated) {
         const doc: Notification = { ...n, read: false };
         setNotifications(prev => prev.some(x => x.id === doc.id) ? prev : [doc, ...prev]);
@@ -258,12 +268,12 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
       addNotification({
         id: `notif_txn_large_${newDoc.id}`,
         title: `Large transaction: ${newDoc.name}`,
-        body: `$${Math.abs(newDoc.amount).toLocaleString()} ${newDoc.amount < 0 ? 'expense' : 'income'} on ${newDoc.account}.`,
+        body: `${formatCurrency(Math.abs(newDoc.amount), currency, 0)} ${newDoc.amount < 0 ? 'expense' : 'income'} on ${newDoc.account}.`,
         time: 'Just now',
         type: newDoc.amount < 0 ? 'alert' : 'success',
       });
     }
-  }, [userId, addNotification]);
+  }, [userId, addNotification, currency]);
 
   const deleteTransaction = useCallback((id: string) => {
     if (!userId) return;
@@ -294,8 +304,8 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
               id: notifId,
               title: milestone === 100 ? `${updated.name} goal reached!` : `${updated.name} is ${milestone}% complete`,
               body: milestone === 100
-                ? `You've hit your $${updated.target.toLocaleString()} target!`
-                : `$${updated.current.toLocaleString()} of $${updated.target.toLocaleString()} saved.`,
+                ? `You've hit your ${formatCurrency(updated.target, currency, 0)} target!`
+                : `${formatCurrency(updated.current, currency, 0)} of ${formatCurrency(updated.target, currency, 0)} saved.`,
               time: 'Just now',
               type: 'success',
             });
@@ -303,7 +313,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
         }
       }
     }
-  }, [userId, goals, notifications, addNotification]);
+  }, [userId, goals, notifications, addNotification, currency]);
 
   const deleteGoal = useCallback((id: string) => {
     if (!userId) return;
@@ -332,6 +342,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
   return (
     <FinanceContext.Provider value={{
       transactions, goals, bills, accounts, notifications,
+      currency, setCurrency,
       addTransaction, deleteTransaction,
       addGoal, updateGoal, deleteGoal,
       toggleBillPaid,

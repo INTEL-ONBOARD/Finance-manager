@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, ShoppingCart, Utensils, Zap, Car, Home, Dumbbell, Wifi, Music, ArrowDownLeft, Tv, Package, Heart } from 'lucide-react';
 import { useFinance, Transaction } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const iconMap: Record<string, any> = {
   Groceries: ShoppingCart, Dining: Utensils, Utilities: Zap, Transport: Car,
@@ -18,7 +19,7 @@ const colorMap: Record<string, string> = {
 interface Props { transaction: Transaction | null; onClose: () => void; }
 
 export default function TransactionDetailModal({ transaction: txn, onClose }: Props) {
-  const { deleteTransaction } = useFinance();
+  const { deleteTransaction, currency } = useFinance();
 
   const handleDelete = () => {
     if (txn) { deleteTransaction(txn.id); onClose(); }
@@ -56,7 +57,7 @@ export default function TransactionDetailModal({ transaction: txn, onClose }: Pr
                 <Icon size={22} style={{ color }} />
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, color: txn.amount > 0 ? 'var(--accent-green)' : 'var(--text-primary)', fontFamily: 'Geist Mono, monospace', letterSpacing: '-0.02em' }}>
-                {txn.amount > 0 ? '+' : '-'}${Math.abs(txn.amount).toFixed(2)}
+                {txn.amount > 0 ? '+' : '-'}{formatCurrency(Math.abs(txn.amount), currency)}
               </div>
               <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginTop: 4 }}>{txn.name}</div>
             </div>

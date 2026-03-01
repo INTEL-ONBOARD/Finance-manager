@@ -5,6 +5,7 @@ import AppShell from '@/components/AppShell';
 const AddTransactionModal = lazy(() => import('@/components/modals/AddTransactionModal'));
 const TransactionDetailModal = lazy(() => import('@/components/modals/TransactionDetailModal'));
 import { useFinance, Transaction, TransactionCategory } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconMap: Record<string, any> = {
@@ -28,7 +29,7 @@ const ALL_CATEGORIES: TransactionCategory[] = [
 ];
 
 export default function TransactionsPage() {
-  const { transactions, monthlyIncome, monthlyExpenses, monthlySaved } = useFinance();
+  const { transactions, monthlyIncome, monthlyExpenses, monthlySaved, currency } = useFinance();
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<Transaction | null>(null);
   const [search, setSearch] = useState('');
@@ -58,9 +59,9 @@ export default function TransactionsPage() {
     <AppShell>
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Income this month',   value: `$${monthlyIncome.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,  color: 'var(--accent-green)' },
-          { label: 'Expenses this month', value: `$${monthlyExpenses.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, color: 'var(--accent-red)' },
-          { label: 'Net saved',           value: `$${monthlySaved.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,    color: monthlySaved >= 0 ? 'var(--accent-blue)' : 'var(--accent-red)' },
+          { label: 'Income this month',   value: formatCurrency(monthlyIncome, currency, 0),   color: 'var(--accent-green)' },
+          { label: 'Expenses this month', value: formatCurrency(monthlyExpenses, currency, 0), color: 'var(--accent-red)' },
+          { label: 'Net saved',           value: formatCurrency(monthlySaved, currency, 0),    color: monthlySaved >= 0 ? 'var(--accent-blue)' : 'var(--accent-red)' },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }} className="card p-4">
@@ -174,7 +175,7 @@ export default function TransactionsPage() {
                       <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Geist Mono, monospace' }}>{txn.account}</span>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 600, fontFamily: 'Geist Mono, monospace', color: txn.amount > 0 ? 'var(--accent-green)' : 'var(--text-primary)', flexShrink: 0 }}>
-                      {txn.amount > 0 ? '+' : ''}${Math.abs(txn.amount).toFixed(2)}
+                      {txn.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(txn.amount), currency)}
                     </div>
                   </motion.div>
                 );

@@ -3,9 +3,10 @@ import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useFinance } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, currency }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="px-3 py-2.5 rounded-xl shadow-xl"
@@ -16,7 +17,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           <div className="w-2 h-2 rounded-full" style={{ background: p.fill }} />
           <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{p.name}:</span>
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>
-            ${p.value.toLocaleString()}
+            {formatCurrency(p.value, currency, 0)}
           </span>
         </div>
       ))}
@@ -25,7 +26,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function BudgetCard() {
-  const { monthlyIncome, monthlyExpenses, monthlySaved, savingsRate } = useFinance();
+  const { monthlyIncome, monthlyExpenses, monthlySaved, savingsRate, currency } = useFinance();
   const currentMonth = new Date().toLocaleDateString('en-US', { month: 'short' });
   const chartData = [
     { month: currentMonth, income: Math.round(monthlyIncome), expenses: Math.round(monthlyExpenses) },
@@ -49,9 +50,9 @@ export default function BudgetCard() {
 
       <div className="grid grid-cols-3 gap-1.5">
         {[
-          { label: 'Income', value: `$${Math.round(monthlyIncome).toLocaleString()}`, color: 'var(--accent-green)' },
-          { label: 'Expenses', value: `$${Math.round(monthlyExpenses).toLocaleString()}`, color: 'var(--accent-red)' },
-          { label: 'Saved', value: `$${Math.round(monthlySaved).toLocaleString()}`, color: 'var(--accent-blue)', sub: `${savingsRate}%` },
+          { label: 'Income', value: formatCurrency(Math.round(monthlyIncome), currency, 0), color: 'var(--accent-green)' },
+          { label: 'Expenses', value: formatCurrency(Math.round(monthlyExpenses), currency, 0), color: 'var(--accent-red)' },
+          { label: 'Saved', value: formatCurrency(Math.round(monthlySaved), currency, 0), color: 'var(--accent-blue)', sub: `${savingsRate}%` },
         ].map(item => (
           <div key={item.label} className="rounded-[10px] p-3 transition-colors hover:bg-[var(--bg-card-hover)]"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
@@ -69,7 +70,7 @@ export default function BudgetCard() {
             <XAxis dataKey="month" tickLine={false} axisLine={false}
               tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} />
             <YAxis hide />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+            <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
             <Bar dataKey="income" name="Income" fill="#22c55e" radius={[3, 3, 0, 0]} opacity={0.8} />
             <Bar dataKey="expenses" name="Expenses" fill="#f87171" radius={[3, 3, 0, 0]} opacity={0.8} />
           </BarChart>

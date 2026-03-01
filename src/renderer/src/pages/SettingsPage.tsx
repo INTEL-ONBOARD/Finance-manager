@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useFinance } from '@/context/FinanceContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Bell, Shield, CreditCard, Crown, Check, ChevronRight,
@@ -46,6 +47,7 @@ function timeAgo(iso: string) {
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
+  const { setCurrency } = useFinance();
   const [active, setActive] = useState('profile');
 
   // Profile
@@ -69,6 +71,9 @@ export default function SettingsPage() {
   useEffect(() => {
     return () => { if (notifSaveTimer.current) clearTimeout(notifSaveTimer.current); };
   }, []);
+
+  // Avatar
+  const [avatarError, setAvatarError] = useState('');
 
   // Security — change password
   const [showChangePw, setShowChangePw] = useState(false);
@@ -113,6 +118,8 @@ export default function SettingsPage() {
           });
           const n = (s as { notifs?: typeof notifs }).notifs;
           if (n) setNotifs(n);
+          const av = (s as { avatar?: string }).avatar;
+          if (av) updateUser({ avatar: av });
         }
       }).finally(() => { if (!cancelled) setProfileLoading(false); });
     } else {
@@ -157,11 +164,26 @@ export default function SettingsPage() {
     try {
       await window.electron?.db.settings?.save(user.id, settings);
       updateUser({ name: profile.name, email: profile.email });
+      setCurrency(profile.currency);
       setSaved(true);
       setTimeout(() => setSaved(false), 2200);
     } catch {
       setSaveError('Failed to save. Please try again.');
     }
+  };
+
+  const handleAvatarClick = async () => {
+    if (!user) return;
+    setAvatarError('');
+    const filePath = await window.electron?.dialog?.openImage();
+    if (!filePath) return;
+    const result = await window.electron?.db.user?.avatar.save(user.id, filePath);
+    if (!result) return;
+    if (!result.ok) {
+      setAvatarError(result.error ?? 'Failed to upload photo.');
+      return;
+    }
+    if (result.avatar) updateUser({ avatar: result.avatar });
   };
 
   const handleToggle = (key: keyof typeof notifs) => {
@@ -292,11 +314,22 @@ export default function SettingsPage() {
                 <div className="card p-6">
                   <div className="flex items-center gap-5">
                     <div className="relative">
-                      <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-bold shrink-0"
-                        style={{ background: 'linear-gradient(135deg, rgba(74,222,128,0.3), rgba(96,165,250,0.3))', border: '2px solid rgba(74,222,128,0.3)', color: 'var(--accent-brand)' }}>
-                        {profile.name ? profile.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'U'}
-                      </div>
-                      <button className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl flex items-center justify-center"
+                      {user?.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt="Profile"
+                          className="w-20 h-20 rounded-2xl object-cover shrink-0"
+                          style={{ border: '2px solid rgba(74,222,128,0.3)' }}
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-bold shrink-0"
+                          style={{ background: 'linear-gradient(135deg, rgba(74,222,128,0.3), rgba(96,165,250,0.3))', border: '2px solid rgba(74,222,128,0.3)', color: 'var(--accent-brand)' }}>
+                          {profile.name ? profile.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'U'}
+                        </div>
+                      )}
+                      <button
+                        onClick={handleAvatarClick}
+                        className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl flex items-center justify-center"
                         style={{ background: 'var(--accent-brand)', color: '#0d1117' }}>
                         <Camera size={12} />
                       </button>

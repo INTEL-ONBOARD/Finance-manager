@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useFinance, Transaction } from '@/context/FinanceContext';
 import AddTransactionModal from './modals/AddTransactionModal';
 import TransactionDetailModal from './modals/TransactionDetailModal';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 type Tab = 'All' | 'Income' | 'Food' | 'Transport' | 'Bills';
 
@@ -32,7 +33,7 @@ const filterMap: Record<Tab, (t: Transaction) => boolean> = {
 const TABS: Tab[] = ['All', 'Income', 'Food', 'Transport', 'Bills'];
 
 export default function TransactionsFeed() {
-  const { transactions } = useFinance();
+  const { transactions, currency } = useFinance();
   const [activeTab, setActiveTab] = useState<Tab>('All');
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<Transaction | null>(null);
@@ -108,7 +109,7 @@ export default function TransactionsFeed() {
                     </div>
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 800, fontFamily: 'Geist Mono, monospace', color: txn.amount > 0 ? 'var(--accent-green)' : 'var(--text-primary)', flexShrink: 0 }}>
-                    {txn.amount > 0 ? '+' : ''}${Math.abs(txn.amount).toFixed(2)}
+                    {txn.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(txn.amount), currency)}
                   </div>
                 </motion.div>
               );

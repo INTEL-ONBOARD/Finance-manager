@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import AppShell from '@/components/AppShell';
 import { useFinance } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -18,7 +19,7 @@ const BUDGET_LIMITS: Record<string, number> = {
 
 
 export default function BudgetPage() {
-  const { transactions, monthlyIncome, monthlyExpenses, monthlySaved, savingsRate } = useFinance();
+  const { transactions, monthlyIncome, monthlyExpenses, monthlySaved, savingsRate, currency } = useFinance();
 
   const currentMonthPrefix = new Date().toISOString().slice(0, 7); // "YYYY-MM"
   const currentMonthLabel  = new Date().toLocaleString('default', { month: 'short' }); // "Mar"
@@ -42,9 +43,9 @@ export default function BudgetPage() {
       {/* Top stats */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: 'Income', value: `$${Math.round(monthlyIncome).toLocaleString()}`, color: 'var(--accent-green)' },
-          { label: 'Expenses', value: `$${Math.round(monthlyExpenses).toLocaleString()}`, color: 'var(--accent-red)' },
-          { label: 'Saved', value: `$${Math.round(monthlySaved).toLocaleString()}`, color: 'var(--accent-blue)' },
+          { label: 'Income', value: formatCurrency(Math.round(monthlyIncome), currency, 0), color: 'var(--accent-green)' },
+          { label: 'Expenses', value: formatCurrency(Math.round(monthlyExpenses), currency, 0), color: 'var(--accent-red)' },
+          { label: 'Saved', value: formatCurrency(Math.round(monthlySaved), currency, 0), color: 'var(--accent-blue)' },
           { label: 'Savings Rate', value: `${savingsRate}%`, color: savingsRate >= 20 ? 'var(--accent-green)' : 'var(--accent-yellow)' },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
@@ -95,7 +96,7 @@ export default function BudgetPage() {
                 <div key={c.category} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
                   <span className="flex-1 text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{c.category}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>${c.spent.toFixed(0)}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>{formatCurrency(c.spent, currency, 0)}</span>
                 </div>
               ))}
             </div>
@@ -118,7 +119,7 @@ export default function BudgetPage() {
                   <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{cat.category}</span>
                   <div className="flex items-center gap-2">
                     <span style={{ fontSize: 11, fontFamily: 'Geist Mono, monospace', color: overBudget ? 'var(--accent-red)' : 'var(--text-muted)' }}>
-                      ${cat.spent.toFixed(0)} / ${cat.limit}
+                      {formatCurrency(cat.spent, currency, 0)} / {formatCurrency(cat.limit, currency, 0)}
                     </span>
                     {overBudget && <span style={{ fontSize: 10, color: 'var(--accent-red)' }}>Over!</span>}
                   </div>

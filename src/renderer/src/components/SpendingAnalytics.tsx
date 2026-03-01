@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useFinance } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const CATEGORY_COLORS: Record<string, string> = {
   Rent: '#f87171', Groceries: '#f59e0b', Dining: '#f97316',
@@ -12,14 +13,14 @@ const CATEGORY_COLORS: Record<string, string> = {
   Gym: '#34d399', Shopping: '#fbbf24', Other: '#64748b',
 };
 
-const PieTooltip = ({ active, payload }: any) => {
+const PieTooltip = ({ active, payload, currency }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="px-3 py-2 rounded-xl shadow-xl"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', fontSize: 12 }}>
       <div style={{ color: 'var(--text-secondary)', marginBottom: 2 }}>{payload[0].name}</div>
       <div style={{ color: payload[0].payload.color, fontFamily: 'Geist Mono, monospace', fontWeight: 600 }}>
-        ${payload[0].value.toFixed(2)}
+        {formatCurrency(payload[0].value, currency)}
       </div>
     </div>
   );
@@ -28,7 +29,7 @@ const PieTooltip = ({ active, payload }: any) => {
 type View = 'breakdown' | 'weekly';
 
 export default function SpendingAnalytics() {
-  const { transactions } = useFinance();
+  const { transactions, currency } = useFinance();
   const [view, setView] = useState<View>('breakdown');
 
   const spendingCategories = useMemo(() => {
@@ -93,7 +94,7 @@ export default function SpendingAnalytics() {
                   paddingAngle={2} startAngle={90} endAngle={-270} strokeWidth={0}>
                   {spendingCategories.map(entry => <Cell key={entry.name} fill={entry.color} opacity={0.9} />)}
                 </Pie>
-                <Tooltip content={<PieTooltip />} />
+                <Tooltip content={<PieTooltip currency={currency} />} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -102,14 +103,14 @@ export default function SpendingAnalytics() {
               <div key={cat.name} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
                 <span className="flex-1 text-[13px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{cat.name}</span>
-                <span className="text-xs font-bold shrink-0" style={{ color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>${cat.value.toFixed(0)}</span>
+                <span className="text-xs font-bold shrink-0" style={{ color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>{formatCurrency(cat.value, currency, 0)}</span>
                 <span className="text-[11px] font-medium w-8 text-right shrink-0" style={{ color: 'var(--text-muted)', fontFamily: 'Geist Mono, monospace' }}>{cat.pct}%</span>
               </div>
             ))}
             <div className="mt-1 pt-1.5" style={{ borderTop: '1px solid var(--border)' }}>
               <div className="flex justify-between items-center pr-1">
                 <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Total this month</span>
-                <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent-red)', fontFamily: 'Geist Mono, monospace' }}>${total.toFixed(0)}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent-red)', fontFamily: 'Geist Mono, monospace' }}>{formatCurrency(total, currency, 0)}</span>
               </div>
             </div>
           </div>
@@ -124,7 +125,7 @@ export default function SpendingAnalytics() {
               <YAxis tickLine={false} axisLine={false}
                 tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} width={36} />
               <Tooltip
-                formatter={(v: number | undefined) => [`$${v ?? 0}`, 'Spent']}
+                formatter={(v: number | undefined) => [formatCurrency(v ?? 0, currency, 0), 'Spent']}
                 contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, fontSize: 12 }}
                 labelStyle={{ color: 'var(--text-muted)' }} itemStyle={{ color: '#f59e0b' }}
                 cursor={{ fill: 'rgba(255,255,255,0.03)' }} />

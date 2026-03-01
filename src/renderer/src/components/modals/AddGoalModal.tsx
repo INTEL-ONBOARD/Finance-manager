@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus } from 'lucide-react';
 import { useFinance } from '@/context/FinanceContext';
@@ -35,20 +36,20 @@ export default function AddGoalModal({ open, onClose }: Props) {
     onClose();
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <div style={{ display: 'contents' }}>
+        <>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
             onClick={onClose} />
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            initial={{ opacity: 0, scale: 0.97, x: '-50%', y: 'calc(-50% + 20px)' }}
+            animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
+            exit={{ opacity: 0, scale: 0.97, x: '-50%', y: 'calc(-50% + 16px)' }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="fixed top-1/2 left-1/2 z-50 w-full max-w-md rounded-2xl p-6"
-            style={{ transform: 'translate(-50%,-50%)', background: '#1a2035', border: '1px solid var(--border-light)', boxShadow: '0 32px 64px rgba(0,0,0,0.6)' }}
+            style={{ background: '#1a2035', border: '1px solid var(--border-light)', boxShadow: '0 32px 64px rgba(0,0,0,0.6)' }}
           >
             <div className="flex items-center justify-between mb-5">
               <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>New Savings Goal</h2>
@@ -112,8 +113,9 @@ export default function AddGoalModal({ open, onClose }: Props) {
               </button>
             </div>
           </motion.div>
-        </div>
+        </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

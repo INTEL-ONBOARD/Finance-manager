@@ -2,13 +2,14 @@ import { motion } from 'framer-motion';
 import { Wallet, CreditCard, TrendingUp, PiggyBank } from 'lucide-react';
 import AppShell from '@/components/AppShell';
 import { useFinance } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const typeIcon: Record<string, any> = { checking: Wallet, savings: PiggyBank, credit: CreditCard, investment: TrendingUp };
 const typeLabel: Record<string, string> = { checking: 'Checking', savings: 'Savings', credit: 'Credit Card', investment: 'Investment' };
 
 export default function AccountsPage() {
-  const { accounts, transactions } = useFinance();
+  const { accounts, transactions, currency } = useFinance();
   const totalAssets = accounts.filter(a => a.balance > 0).reduce((s, a) => s + a.balance, 0);
   const totalDebt   = accounts.filter(a => a.balance < 0).reduce((s, a) => s + Math.abs(a.balance), 0);
 
@@ -17,8 +18,8 @@ export default function AccountsPage() {
       {/* Summary */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Total Assets', value: `$${totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: 'var(--accent-green)' },
-          { label: 'Total Debt',   value: `$${totalDebt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,   color: 'var(--accent-red)' },
+          { label: 'Total Assets', value: formatCurrency(totalAssets, currency), color: 'var(--accent-green)' },
+          { label: 'Total Debt',   value: formatCurrency(totalDebt, currency),   color: 'var(--accent-red)' },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }} className="card p-4">
@@ -49,13 +50,13 @@ export default function AccountsPage() {
                 </div>
                 {acct.type === 'credit' && acct.limit && (
                   <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Geist Mono, monospace' }}>
-                    Limit: ${acct.limit.toLocaleString()}
+                    Limit: {formatCurrency(acct.limit, currency, 0)}
                   </span>
                 )}
               </div>
 
               <div style={{ fontSize: 26, fontWeight: 700, fontFamily: 'Geist Mono, monospace', letterSpacing: '-0.02em', color: acct.balance < 0 ? 'var(--accent-red)' : 'var(--text-primary)', marginBottom: 4 }}>
-                {acct.balance < 0 ? '-' : ''}${Math.abs(acct.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(acct.balance, currency)}
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Current balance</div>
 
@@ -85,7 +86,7 @@ export default function AccountsPage() {
                     <div key={t.id} className="flex justify-between items-center py-1">
                       <span style={{ fontSize: 11, color: 'var(--text-secondary)' }} className="truncate">{t.name}</span>
                       <span style={{ fontSize: 11, fontFamily: 'Geist Mono, monospace', color: t.amount > 0 ? 'var(--accent-green)' : 'var(--text-primary)', flexShrink: 0, marginLeft: 8 }}>
-                        {t.amount > 0 ? '+' : ''}${Math.abs(t.amount).toFixed(2)}
+                        {t.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(t.amount), currency)}
                       </span>
                     </div>
                   ))}

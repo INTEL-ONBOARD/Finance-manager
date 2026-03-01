@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import AppShell from '@/components/AppShell';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { useFinance } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const portfolioHistory = [
   { month: 'Aug', value: 6800 }, { month: 'Sep', value: 7100 },
@@ -19,6 +21,7 @@ const holdings = [
 ];
 
 export default function InvestmentsPage() {
+  const { currency } = useFinance();
   const totalValue = holdings.reduce((s, h) => s + h.shares * h.price, 0);
   const totalCost  = holdings.reduce((s, h) => s + h.shares * h.cost, 0);
   const totalGain  = totalValue - totalCost;
@@ -28,8 +31,8 @@ export default function InvestmentsPage() {
     <AppShell>
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Portfolio Value',    value: `$${totalValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, color: 'var(--accent-brand)' },
-          { label: 'Total Gain / Loss',  value: `${totalGain >= 0 ? '+' : ''}$${totalGain.toFixed(0)}`,                  color: totalGain >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' },
+          { label: 'Portfolio Value',    value: formatCurrency(totalValue, currency, 0),                                                        color: 'var(--accent-brand)' },
+          { label: 'Total Gain / Loss',  value: `${totalGain >= 0 ? '+' : ''}${formatCurrency(Math.abs(totalGain), currency, 0)}`,                color: totalGain >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' },
           { label: 'All-Time Return',    value: `${Number(totalPct) >= 0 ? '+' : ''}${totalPct}%`,                       color: Number(totalPct) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
@@ -58,7 +61,7 @@ export default function InvestmentsPage() {
               <YAxis tickLine={false} axisLine={false}
                 tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} width={48} />
               <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, fontSize: 12 }}
-                formatter={(v: number | undefined) => [`$${(v ?? 0).toLocaleString()}`, 'Value']}
+                formatter={(v: number | undefined) => [formatCurrency(v ?? 0, currency, 0), 'Value']}
                 labelStyle={{ color: 'var(--text-muted)' }} cursor={{ stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1 }} />
               <Area type="monotone" dataKey="value" stroke="#a78bfa" strokeWidth={2} fill="url(#portGrad)"
                 dot={false} activeDot={{ r: 4, fill: '#a78bfa', strokeWidth: 0 }} />
@@ -97,12 +100,12 @@ export default function InvestmentsPage() {
                   </div>
                 </div>
                 <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Geist Mono, monospace' }}>{h.shares}</span>
-                <span style={{ fontSize: 12, color: 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>${h.price.toFixed(2)}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>${value.toFixed(0)}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>{formatCurrency(h.price, currency)}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>{formatCurrency(value, currency, 0)}</span>
                 <div className="flex items-center gap-1" style={{ color: gain >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
                   {gain >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                   <span style={{ fontSize: 12, fontFamily: 'Geist Mono, monospace', fontWeight: 600 }}>
-                    {gain >= 0 ? '+' : ''}${gain.toFixed(0)} ({pct}%)
+                    {gain >= 0 ? '+' : ''}{formatCurrency(Math.abs(gain), currency, 0)} ({pct}%)
                   </span>
                 </div>
               </motion.div>

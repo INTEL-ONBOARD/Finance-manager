@@ -2,11 +2,12 @@ import { motion } from 'framer-motion';
 import { Wallet, CreditCard, TrendingDown, TrendingUp } from 'lucide-react';
 import { useFinance } from '@/context/FinanceContext';
 import { Link } from 'react-router-dom';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 export default function StatCards() {
   const {
     totalBalance, creditUtilization, accounts,
-    monthlyExpenses, monthlySaved, savingsRate,
+    monthlyExpenses, monthlySaved, savingsRate, currency,
   } = useFinance();
 
   const creditCard = accounts.find(a => a.type === 'credit');
@@ -15,7 +16,7 @@ export default function StatCards() {
   const stats = [
     {
       label: 'Total Balance',
-      value: `$${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: formatCurrency(totalBalance, currency),
       sub: `Across ${accounts.filter(a => a.type !== 'credit').length} accounts`,
       icon: Wallet,
       color: '#4ade80',
@@ -26,7 +27,7 @@ export default function StatCards() {
     {
       label: 'Credit Utilization',
       value: `${creditUtilization}%`,
-      sub: creditCard ? `$${Math.abs(creditCard.balance).toLocaleString()} of $${creditCard.limit?.toLocaleString()}` : '—',
+      sub: creditCard ? `${formatCurrency(Math.abs(creditCard.balance), currency, 0)} of ${formatCurrency(creditCard.limit ?? 0, currency, 0)}` : '—',
       icon: CreditCard,
       color: '#60a5fa',
       trend: creditUtilization < 30 ? 'Healthy' : 'High',
@@ -35,17 +36,17 @@ export default function StatCards() {
     },
     {
       label: 'Monthly Spend',
-      value: `$${monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+      value: formatCurrency(monthlyExpenses, currency, 0),
       sub: `${savingsRate}% savings rate`,
       icon: TrendingDown,
       color: '#f59e0b',
-      trend: `$${monthlySaved.toFixed(0)} saved`,
+      trend: `${formatCurrency(monthlySaved, currency, 0)} saved`,
       good: monthlySaved > 0,
       href: '/budget',
     },
     {
       label: 'Investments',
-      value: investmentAccount ? `$${investmentAccount.balance.toLocaleString()}` : '$0',
+      value: investmentAccount ? formatCurrency(investmentAccount.balance, currency, 0) : formatCurrency(0, currency, 0),
       sub: investmentAccount ? 'Investment portfolio' : 'No investment account',
       icon: TrendingUp,
       color: '#a78bfa',

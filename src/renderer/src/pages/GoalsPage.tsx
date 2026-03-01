@@ -4,6 +4,7 @@ import { Plus, Trash2, Edit2, Check, X, Umbrella, Plane, Laptop, Home, Car, Grad
 import AppShell from '@/components/AppShell';
 const AddGoalModal = lazy(() => import('@/components/modals/AddGoalModal'));
 import { useFinance } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconMap: Record<string, any> = { Umbrella, Plane, Laptop, Home, Car, GraduationCap, Heart, Star, ShoppingBag, Smartphone };
@@ -20,7 +21,7 @@ function ProgressBar({ pct, color, delay }: { pct: number; color: string; delay:
 }
 
 export default function GoalsPage() {
-  const { goals, updateGoal, deleteGoal } = useFinance();
+  const { goals, updateGoal, deleteGoal, currency } = useFinance();
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
@@ -41,7 +42,7 @@ export default function GoalsPage() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Active Goals', value: String(goals.length), color: 'var(--accent-brand)' },
-          { label: 'Total Saved', value: `$${totalSaved.toLocaleString()}`, color: 'var(--accent-green)' },
+          { label: 'Total Saved', value: formatCurrency(totalSaved, currency, 0), color: 'var(--accent-green)' },
           { label: 'Overall Progress', value: `${overallPct}%`, color: 'var(--accent-blue)' },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
@@ -111,7 +112,7 @@ export default function GoalsPage() {
                     ) : (
                       <div className="flex items-center gap-2">
                         <span style={{ fontSize: 20, fontWeight: 700, color: goal.color, fontFamily: 'Geist Mono, monospace', letterSpacing: '-0.02em' }}>
-                          ${goal.current.toLocaleString()}
+                          {formatCurrency(goal.current, currency, 0)}
                         </span>
                         <button onClick={() => { setEditId(goal.id); setEditAmount(String(goal.current)); }}
                           className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/5 transition-colors"
@@ -121,7 +122,7 @@ export default function GoalsPage() {
                       </div>
                     )}
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      of <span style={{ fontFamily: 'Geist Mono, monospace' }}>${goal.target.toLocaleString()}</span> target
+                      of <span style={{ fontFamily: 'Geist Mono, monospace' }}>{formatCurrency(goal.target, currency, 0)}</span> target
                     </div>
                   </div>
                   <div className="text-right">
@@ -129,7 +130,7 @@ export default function GoalsPage() {
                       {pct}%
                     </div>
                     {remaining > 0 && (
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>${remaining.toLocaleString()} left</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatCurrency(remaining, currency, 0)} left</div>
                     )}
                   </div>
                 </div>

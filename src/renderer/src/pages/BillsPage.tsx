@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Check, Clock, Home, Zap, Wifi, Tv, Dumbbell, Shield } from 'lucide-react';
 import AppShell from '@/components/AppShell';
 import { useFinance } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const iconMap: Record<string, any> = {
@@ -14,7 +15,7 @@ const categoryColor: Record<string, string> = {
 };
 
 export default function BillsPage() {
-  const { bills, toggleBillPaid } = useFinance();
+  const { bills, toggleBillPaid, currency } = useFinance();
   const today = new Date().getDate();
 
   const paid   = bills.filter(b => b.paid);
@@ -31,9 +32,9 @@ export default function BillsPage() {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Monthly Total', value: `$${totalMonthly.toFixed(2)}`, color: 'var(--text-primary)' },
-          { label: 'Paid',          value: `$${totalPaid.toFixed(2)}`,    color: 'var(--accent-green)' },
-          { label: 'Still Due',     value: `$${totalDue.toFixed(2)}`,     color: totalDue > 0 ? 'var(--accent-red)' : 'var(--accent-green)' },
+          { label: 'Monthly Total', value: formatCurrency(totalMonthly, currency), color: 'var(--text-primary)' },
+          { label: 'Paid',          value: formatCurrency(totalPaid, currency),    color: 'var(--accent-green)' },
+          { label: 'Still Due',     value: formatCurrency(totalDue, currency),     color: totalDue > 0 ? 'var(--accent-red)' : 'var(--accent-green)' },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }} className="card p-4">
@@ -60,10 +61,10 @@ export default function BillsPage() {
         </div>
         <div className="flex justify-between mt-1.5">
           <span style={{ fontSize: 11, color: 'var(--accent-green)', fontFamily: 'Geist Mono, monospace' }}>
-            ${totalPaid.toFixed(0)} paid
+            {formatCurrency(totalPaid, currency, 0)} paid
           </span>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Geist Mono, monospace' }}>
-            {Math.round((totalPaid / totalMonthly) * 100)}% of ${totalMonthly.toFixed(0)}
+            {Math.round((totalPaid / totalMonthly) * 100)}% of {formatCurrency(totalMonthly, currency, 0)}
           </span>
         </div>
       </motion.div>
@@ -110,7 +111,7 @@ export default function BillsPage() {
                 </div>
                 <div className="text-right mr-2">
                   <div style={{ fontSize: 14, fontWeight: 700, color: bill.paid ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>
-                    ${bill.amount.toFixed(2)}
+                    {formatCurrency(bill.amount, currency)}
                   </div>
                 </div>
                 <button onClick={() => toggleBillPaid(bill.id)}

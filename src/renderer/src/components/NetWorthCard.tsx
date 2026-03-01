@@ -3,22 +3,23 @@ import { TrendingUp, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useFinance } from '@/context/FinanceContext';
+import { formatCurrency } from '@/utils/formatCurrency';
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, currency }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="px-3 py-2 rounded-xl shadow-xl"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', fontSize: 12 }}>
       <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>{payload[0].payload.month}</div>
       <div style={{ color: 'var(--accent-brand)', fontFamily: 'Geist Mono, monospace', fontWeight: 600 }}>
-        ${payload[0].value.toLocaleString()}
+        {formatCurrency(payload[0].value, currency, 0)}
       </div>
     </div>
   );
 };
 
 export default function NetWorthCard() {
-  const { netWorth, accounts, monthlyIncome, monthlySaved } = useFinance();
+  const { netWorth, accounts, monthlyIncome, monthlySaved, currency } = useFinance();
   const totalAssets = accounts.filter(a => a.balance > 0).reduce((s, a) => s + a.balance, 0);
   const totalLiab = accounts.filter(a => a.balance < 0).reduce((s, a) => s + Math.abs(a.balance), 0);
   const savingsRate = monthlyIncome > 0 ? Math.round((monthlySaved / monthlyIncome) * 100) : 0;
@@ -36,7 +37,7 @@ export default function NetWorthCard() {
             Net Worth
           </div>
           <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1.1, marginTop: 4 }}>
-            ${netWorth.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            {formatCurrency(netWorth, currency, 0)}
           </div>
           <div className="flex items-center gap-1.5 mt-2">
             <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-bold"
@@ -53,8 +54,8 @@ export default function NetWorthCard() {
 
       <div className="grid grid-cols-3 gap-1.5">
         {[
-          { label: 'Assets', value: `$${totalAssets.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, color: 'var(--accent-green)' },
-          { label: 'Liabilities', value: `$${totalLiab.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, color: 'var(--accent-red)' },
+          { label: 'Assets', value: formatCurrency(totalAssets, currency, 0), color: 'var(--accent-green)' },
+          { label: 'Liabilities', value: formatCurrency(totalLiab, currency, 0), color: 'var(--accent-red)' },
           { label: 'Savings Rate', value: `${savingsRate}%`, color: 'var(--accent-blue)' },
         ].map(item => (
           <div key={item.label} className="rounded-[10px] p-3 transition-colors hover:bg-[var(--bg-card-hover)]"
@@ -78,7 +79,7 @@ export default function NetWorthCard() {
             <XAxis dataKey="month" tickLine={false} axisLine={false}
               tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Geist Mono, monospace' }} />
             <YAxis hide domain={['auto', 'auto']} />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1 }} />
+            <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1 }} />
             <Area type="monotone" dataKey="value" stroke="#4ade80" strokeWidth={2}
               fill="url(#nwGrad)" dot={false} activeDot={{ r: 4, fill: '#4ade80', strokeWidth: 0 }} />
           </AreaChart>

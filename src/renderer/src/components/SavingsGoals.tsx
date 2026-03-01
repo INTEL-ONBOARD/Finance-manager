@@ -4,6 +4,7 @@ import { ChevronRight, Plus, Trash2, Umbrella, Plane, Laptop, Home, Car, Graduat
 import { Link } from 'react-router-dom';
 import { useFinance } from '@/context/FinanceContext';
 import AddGoalModal from './modals/AddGoalModal';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const iconMap: Record<string, any> = {
   Umbrella, Plane, Laptop, Home, Car, GraduationCap, Heart, Star, ShoppingBag, Smartphone,
@@ -22,7 +23,7 @@ function ProgressBar({ pct, color, delay }: { pct: number; color: string; delay:
 }
 
 export default function SavingsGoals() {
-  const { goals, deleteGoal } = useFinance();
+  const { goals, deleteGoal, currency } = useFinance();
   const [addOpen, setAddOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
@@ -94,7 +95,7 @@ export default function SavingsGoals() {
                       </div>
                       <div className="flex items-center justify-between mt-1">
                         <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Geist Mono, monospace', fontWeight: 500 }}>
-                          ${goal.current.toLocaleString()} <span style={{ color: 'var(--text-secondary)' }}>/ ${goal.target.toLocaleString()}</span>
+                          {formatCurrency(goal.current, currency, 0)} <span style={{ color: 'var(--text-secondary)' }}>/ {formatCurrency(goal.target, currency, 0)}</span>
                         </span>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{goal.deadline}</span>
                       </div>
@@ -103,7 +104,7 @@ export default function SavingsGoals() {
                   <ProgressBar pct={pct} color={goal.color} delay={0.4 + i * 0.08} />
                   {pct >= 80 && remaining > 0 && (
                     <div className="mt-1 text-right">
-                      <span style={{ fontSize: 10, color: goal.color }}>Only ${remaining.toLocaleString()} to go!</span>
+                      <span style={{ fontSize: 10, color: goal.color }}>Only {formatCurrency(remaining, currency, 0)} to go!</span>
                     </div>
                   )}
                   {pct >= 100 && (
