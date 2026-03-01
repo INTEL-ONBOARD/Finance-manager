@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('electron', {
 
   dialog: {
     openImage: (): Promise<string | null> => ipcRenderer.invoke('dialog:openImage'),
+    openFile: (filters?: { name: string; extensions: string[] }[]): Promise<string | null> =>
+      ipcRenderer.invoke('dialog:openFile', filters),
+    readFile: (filePath: string): Promise<string> => ipcRenderer.invoke('fs:readFile', filePath),
   },
 
   // MongoDB-backed collections (all scoped by userId)

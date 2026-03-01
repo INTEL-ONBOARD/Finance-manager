@@ -4,7 +4,7 @@ import { MongoClient, Db, Collection, ChangeStream } from 'mongodb'
 import { autoUpdater } from 'electron-updater'
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto'
 import { promisify } from 'util'
-import { readFileSync, statSync } from 'fs'
+import { readFileSync, statSync, promises as fsPromises } from 'fs'
 
 const scryptAsync = promisify(scrypt)
 
@@ -230,6 +230,22 @@ function registerIpcHandlers(): void {
       properties: ['openFile']
     })
     return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('dialog:openFile', async (event, filters?: { name: string; extensions: string[] }[]) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0]
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openFile'],
+      filters: filters ?? [
+        { name: 'Spreadsheets & CSV', extensions: ['xlsx', 'xls', 'csv'] },
+      ],
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('fs:readFile', async (_e, filePath: string) => {
+    const data = await fsPromises.readFile(filePath)
+    return data.toString('base64')
   })
 
   ipcMain.handle('db:user:avatar:save', async (_e, userId: string, filePath: string) => {

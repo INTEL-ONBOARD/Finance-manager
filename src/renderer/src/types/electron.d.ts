@@ -44,6 +44,8 @@ declare global {
       };
       dialog: {
         openImage: () => Promise<string | null>;
+        openFile: (filters?: { name: string; extensions: string[] }[]) => Promise<string | null>;
+        readFile: (filePath: string) => Promise<string>;
       };
       db: {
         transactions: {
