@@ -175,15 +175,19 @@ export default function SettingsPage() {
   const handleAvatarClick = async () => {
     if (!user) return;
     setAvatarError('');
-    const filePath = await window.electron?.dialog?.openImage();
-    if (!filePath) return;
-    const result = await window.electron?.db.user?.avatar.save(user.id, filePath);
-    if (!result) return;
-    if (!result.ok) {
-      setAvatarError(result.error ?? 'Failed to upload photo.');
-      return;
+    try {
+      const filePath = await window.electron?.dialog?.openImage();
+      if (!filePath) return;
+      const result = await window.electron?.db.user?.avatar.save(user.id, filePath);
+      if (!result) return;
+      if (!result.ok) {
+        setAvatarError(result.error ?? 'Failed to upload photo.');
+        return;
+      }
+      if (result.avatar) updateUser({ avatar: result.avatar });
+    } catch {
+      setAvatarError('Failed to upload photo. Please try again.');
     }
-    if (result.avatar) updateUser({ avatar: result.avatar });
   };
 
   const handleToggle = (key: keyof typeof notifs) => {
