@@ -12,7 +12,7 @@ interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
     login: (email: string, password: string) => Promise<void>;
-    register: (name: string, email: string, password: string) => Promise<void>;
+    register: (name: string, email: string, password: string, avatar?: string) => Promise<void>;
     logout: () => void;
     loading: boolean;
     updateUser: (updates: Partial<Pick<User, 'name' | 'email' | 'avatar'>>) => void;
@@ -50,12 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('finmate-auth-user', JSON.stringify(u));
     };
 
-    const register = async (name: string, email: string, password: string) => {
+    const register = async (name: string, email: string, password: string, avatar?: string) => {
         const result = await window.electron!.auth.register(name, email, password);
         if (!result.ok) throw new Error(result.error ?? 'Registration failed');
-        const u = { ...result.user!, sessionId: result.sessionId };
+        const u = { ...result.user!, sessionId: result.sessionId, ...(avatar ? { avatar } : {}) };
         setUser(u);
         localStorage.setItem('finmate-auth-user', JSON.stringify(u));
+        if (avatar && u.id) {
+            window.electron?.db.settings.save(u.id, { avatar }).catch(() => {});
+        }
     };
 
     const logout = () => {

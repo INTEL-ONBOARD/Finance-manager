@@ -4,6 +4,22 @@ import { motion } from 'framer-motion';
 import { Hexagon, Lock, Mail, User, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const AVATARS = [
+    '/profile-avatar/monster.png',
+    '/profile-avatar/monster_2.png',
+    '/profile-avatar/monster_3.png',
+    '/profile-avatar/monster_4.png',
+    '/profile-avatar/monster_5.png',
+    '/profile-avatar/monster_6.png',
+    '/profile-avatar/monster_7.png',
+    '/profile-avatar/monster_8.png',
+    '/profile-avatar/monster_9.png',
+    '/profile-avatar/monster_10.png',
+    '/profile-avatar/monster_11.png',
+    '/profile-avatar/monster_12.png',
+    '/profile-avatar/monster_13.png',
+];
+
 export default function RegisterPage() {
     const navigate = useNavigate();
     const { register } = useAuth();
@@ -11,6 +27,7 @@ export default function RegisterPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [selectedAvatar, setSelectedAvatar] = useState<string>(AVATARS[0]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -19,7 +36,7 @@ export default function RegisterPage() {
         setError('');
         setLoading(true);
         try {
-            await register(name, email, password);
+            await register(name, email, password, selectedAvatar);
             navigate('/');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Registration failed');
@@ -101,6 +118,41 @@ export default function RegisterPage() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
+                        {/* Avatar Picker */}
+                        <div className="flex flex-col gap-2">
+                            <label style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, paddingLeft: 4 }}>
+                                Choose your avatar
+                            </label>
+                            <div className="grid grid-cols-7 gap-2 p-3 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+                                {AVATARS.map((src) => (
+                                    <button
+                                        key={src}
+                                        type="button"
+                                        onClick={() => setSelectedAvatar(src)}
+                                        className="relative rounded-xl overflow-hidden transition-all"
+                                        style={{
+                                            aspectRatio: '1',
+                                            padding: 2,
+                                            background: selectedAvatar === src ? 'var(--accent-brand)' : 'transparent',
+                                            outline: 'none',
+                                            boxShadow: selectedAvatar === src ? '0 0 0 2px var(--accent-brand)' : 'none',
+                                        }}
+                                    >
+                                        <img
+                                            src={src}
+                                            alt="avatar"
+                                            className="w-full h-full rounded-lg object-cover"
+                                            style={{ display: 'block' }}
+                                        />
+                                        {selectedAvatar === src && (
+                                            <div className="absolute inset-0 rounded-xl" style={{ background: 'rgba(132,204,22,0.15)' }} />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="flex flex-col gap-2">
                             <label style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, paddingLeft: 4 }}>
                                 Full Name
