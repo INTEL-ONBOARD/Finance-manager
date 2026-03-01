@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Hexagon } from 'lucide-react';
@@ -15,12 +15,6 @@ export default function OnboardingPage() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
-
-  useEffect(() => {
-    if (localStorage.getItem('finwise-onboarded') !== 'false') {
-      navigate('/', { replace: true });
-    }
-  }, [navigate]);
 
   const goTo = (next: number) => {
     setDirection(next > step ? 1 : -1);

@@ -55,6 +55,25 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return !isAuthenticated ? children : <Navigate to="/" replace />
 }
 
+// Onboarding route: must be authenticated AND have finwise-onboarded='false'
+function OnboardingRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="animate-pulse flex items-center justify-center w-16 h-16 rounded-2xl bg-lime-500/20">
+          <Hexagon size={32} className="text-lime-500" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (localStorage.getItem('finwise-onboarded') !== 'false') return <Navigate to="/" replace />
+  return children
+}
+
 const router = createHashRouter([
   // Private / Main App Routes
   { path: '/', element: <PrivateRoute><HomePage /></PrivateRoute> },
@@ -77,7 +96,7 @@ const router = createHashRouter([
   // Public / Auth Routes
   { path: '/login', element: <PublicRoute><LoginPage /></PublicRoute> },
   { path: '/register', element: <PublicRoute><RegisterPage /></PublicRoute> },
-  { path: '/onboarding', element: <OnboardingPage /> },
+  { path: '/onboarding', element: <OnboardingRoute><OnboardingPage /></OnboardingRoute> },
 ])
 
 export default function App() {
