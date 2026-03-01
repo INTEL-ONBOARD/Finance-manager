@@ -64,6 +64,7 @@ export default function ConversationSidebar() {
               id={c.id}
               name={name}
               avatar={peer?.avatar}
+              lastActiveAt={peer?.lastActiveAt}
               lastMessage={c.lastMessage}
               lastMessageAt={c.lastMessageAt}
               unread={unreadCounts[c.id] ?? 0}

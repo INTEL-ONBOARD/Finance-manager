@@ -1,9 +1,15 @@
 import Avatar from './Avatar';
 
+function isOnline(lastActiveAt?: string | null): boolean {
+  if (!lastActiveAt) return false;
+  return Date.now() - new Date(lastActiveAt).getTime() < 5 * 60 * 1000;
+}
+
 interface ConversationItemProps {
   id: string;
   name: string;
   avatar?: string | null;
+  lastActiveAt?: string | null;
   lastMessage: string;
   lastMessageAt: string;
   unread: number;
@@ -23,9 +29,10 @@ function relativeTime(iso: string): string {
 }
 
 export default function ConversationItem({
-  id, name, avatar, lastMessage, lastMessageAt, unread, isActive, onClick,
+  id, name, avatar, lastActiveAt, lastMessage, lastMessageAt, unread, isActive, onClick,
 }: ConversationItemProps) {
   const isGroup = id === 'group';
+  const online = !isGroup && isOnline(lastActiveAt);
 
   return (
     <button
@@ -36,20 +43,30 @@ export default function ConversationItem({
         borderLeft: isActive ? '2px solid var(--accent-brand, #6366f1)' : '2px solid transparent',
       }}
     >
-      {isGroup ? (
-        <div
-          style={{
-            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(99,102,241,0.15)', border: '1.5px solid rgba(99,102,241,0.35)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14,
-          }}
-        >
-          #
-        </div>
-      ) : (
-        <Avatar name={name} avatar={avatar} size={32} />
-      )}
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        {isGroup ? (
+          <div
+            style={{
+              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(99,102,241,0.15)', border: '1.5px solid rgba(99,102,241,0.35)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14,
+            }}
+          >
+            #
+          </div>
+        ) : (
+          <Avatar name={name} avatar={avatar} size={32} />
+        )}
+        {online && (
+          <span style={{
+            position: 'absolute', bottom: 0, right: 0,
+            width: 9, height: 9, borderRadius: '50%',
+            background: '#22c55e',
+            border: '2px solid var(--bg-sidebar, var(--bg-main))',
+          }} />
+        )}
+      </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-0.5">

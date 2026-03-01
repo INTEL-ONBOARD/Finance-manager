@@ -219,6 +219,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }).catch(() => {});
   }, [user]);
 
+  // Presence heartbeat — ping every 30s so others see us as online
+  useEffect(() => {
+    const el = window.electron?.chat;
+    if (!user?.sessionId || !el) return;
+    const sessionId = user.sessionId;
+    el.presencePing(sessionId).catch(() => {});
+    const interval = setInterval(() => {
+      el.presencePing(sessionId).catch(() => {});
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [user?.sessionId]);
+
+  // Refresh user list every 60s to pick up presence changes
+  useEffect(() => {
+    const el = window.electron?.chat;
+    if (!user || !el) return;
+    const interval = setInterval(() => {
+      el.listUsers(user.id).then(setAllUsers).catch(() => {});
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Track all watched conversation IDs for cleanup
   const watchedIdsRef = useRef<Set<string>>(new Set());
 

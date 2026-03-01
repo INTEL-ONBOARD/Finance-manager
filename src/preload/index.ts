@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('electron', {
     transactions: {
       getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:transactions:getAll', userId),
       add: (userId: string, doc: unknown): Promise<void> => ipcRenderer.invoke('db:transactions:add', userId, doc),
+      update: (userId: string, id: string, updates: unknown): Promise<void> => ipcRenderer.invoke('db:transactions:update', userId, id, updates),
       delete: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:transactions:delete', userId, id),
     },
     goals: {
@@ -80,6 +81,8 @@ contextBridge.exposeInMainWorld('electron', {
   chat: {
     listUsers: (selfId: string): Promise<unknown[]> =>
       ipcRenderer.invoke('chat:users:list', selfId),
+    presencePing: (sessionId: string): Promise<void> =>
+      ipcRenderer.invoke('chat:presence:ping', sessionId),
     fetchMessages: (conversationId: string, limit: number, beforeSentAt?: string): Promise<unknown[]> =>
       ipcRenderer.invoke('chat:messages:fetch', conversationId, limit, beforeSentAt),
     sendMessage: (doc: object): Promise<void> =>

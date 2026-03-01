@@ -49,6 +49,7 @@ declare global {
         transactions: {
           getAll: (userId: string) => Promise<Transaction[]>;
           add: (userId: string, doc: Transaction) => Promise<void>;
+          update: (userId: string, id: string, updates: Partial<Transaction>) => Promise<void>;
           delete: (userId: string, id: string) => Promise<void>;
         };
         goals: {
@@ -103,6 +104,7 @@ declare global {
       };
       chat: {
         listUsers:          (selfId: string) => Promise<import('@/types/chat').ChatUser[]>;
+        presencePing:       (sessionId: string) => Promise<void>;
         fetchMessages:      (conversationId: string, limit: number, beforeSentAt?: string) => Promise<import('@/types/chat').ChatMessage[]>;
         sendMessage:        (doc: Omit<import('@/types/chat').ChatMessage, 'id'>) => Promise<void>;
         listConversations:  (userId: string) => Promise<Array<{ id: string; lastMessage: string; lastMessageAt: string }>>;

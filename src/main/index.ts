@@ -275,9 +275,22 @@ function registerIpcHandlers(): void {
   })
 
   // ── Chat ──────────────────────────────────────────────────────────────────────
-  ipcMain.handle('chat:users:list', async (_e, selfId: string) =>
-    col('users').find({ id: { $ne: selfId } }, { projection: { _id: 0, id: 1, name: 1, email: 1, avatar: 1 } }).toArray()
-  )
+  ipcMain.handle('chat:users:list', async (_e, selfId: string) => {
+    const users = await col('users').find({ id: { $ne: selfId } }, { projection: { _id: 0, id: 1, name: 1, email: 1, avatar: 1 } }).toArray()
+    // Attach most-recent lastActiveAt from sessions for presence
+    const sessions = await col('sessions').aggregate([
+      { $match: { userId: { $in: users.map((u: Record<string, unknown>) => u.id) } } },
+      { $sort: { lastActiveAt: -1 } },
+      { $group: { _id: '$userId', lastActiveAt: { $first: '$lastActiveAt' } } }
+    ]).toArray()
+    const presenceMap = new Map(sessions.map((s: Record<string, unknown>) => [s._id, s.lastActiveAt]))
+    return users.map((u: Record<string, unknown>) => ({ ...u, lastActiveAt: presenceMap.get(u.id) ?? null }))
+  })
+
+  ipcMain.handle('chat:presence:ping', async (_e, sessionId: string) => {
+    await col('sessions').updateOne({ sessionId }, { $set: { lastActiveAt: new Date().toISOString() } })
+    return null
+  })
 
   ipcMain.handle('chat:messages:fetch', async (_e, conversationId: string, limit: number, beforeSentAt?: string) => {
     const filter: Record<string, unknown> = { conversationId }

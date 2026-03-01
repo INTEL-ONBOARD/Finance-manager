@@ -23,4 +23,5 @@ export interface ChatUser {
   name: string
   email: string
   avatar?: string | null
+  lastActiveAt?: string | null
 }
