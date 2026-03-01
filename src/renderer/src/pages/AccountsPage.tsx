@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wallet, CreditCard, TrendingUp, PiggyBank, Receipt,
@@ -116,6 +116,18 @@ export default function AccountsPage() {
   const [menuOpen, setMenuOpen]             = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm]   = useState<string | null>(null);
   const [activeFilter, setActiveFilter]     = useState<FilterType>('all');
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
 
   const totalAssets  = accounts.filter(a => a.balance > 0).reduce((s, a) => s + a.balance, 0);
   const totalDebt    = accounts.filter(a => a.balance < 0).reduce((s, a) => s + Math.abs(a.balance), 0);
@@ -340,7 +352,7 @@ export default function AccountsPage() {
                 style={{ position: 'relative', padding: 0 }}
               >
                 {/* ⋯ menu trigger — floats above card gradient */}
-                <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+                <div ref={isMenuOpen ? menuRef : undefined} style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
                   <button
                     onClick={() => setMenuOpen(isMenuOpen ? null : acct.id)}
                     style={{
@@ -365,7 +377,7 @@ export default function AccountsPage() {
                           boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
                         }}
                       >
-                        <button onClick={() => handleEdit(acct)} style={{
+                        <button onClick={(e) => { e.stopPropagation(); handleEdit(acct); }} style={{
                           display: 'flex', alignItems: 'center', gap: 8, width: '100%',
                           padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
                           borderRadius: 6, color: 'var(--text-primary)', fontSize: 13,
@@ -373,7 +385,7 @@ export default function AccountsPage() {
                           <Pencil size={14} /> Edit
                         </button>
                         <button
-                          onClick={() => { if (!hasTxns) { setDeleteConfirm(acct.id); setMenuOpen(null); } }}
+                          onClick={(e) => { e.stopPropagation(); if (!hasTxns) { setDeleteConfirm(acct.id); setMenuOpen(null); } }}
                           disabled={hasTxns}
                           title={hasTxns ? `Cannot delete — ${acctTxns.length} transaction${acctTxns.length !== 1 ? 's' : ''} linked` : undefined}
                           style={{
@@ -596,11 +608,6 @@ export default function AccountsPage() {
             );
           })}
         </div>
-      )}
-
-      {/* Overlay to close dropdown on outside click */}
-      {menuOpen && (
-        <div onClick={() => setMenuOpen(null)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
       )}
 
       {/* Add / Edit Modal */}
