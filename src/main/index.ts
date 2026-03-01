@@ -31,6 +31,7 @@ const DB_NAME = 'finwise'
 let mongoClient: MongoClient | null = null
 let db: Db | null = null
 const activeStreams = new Map<string, ChangeStream>()
+let presenceStream: ChangeStream | null = null
 
 function col(name: string): Collection {
   if (!db) throw new Error('MongoDB not initialized')
@@ -116,6 +117,10 @@ function registerIpcHandlers(): void {
   })
   ipcMain.handle('db:bills:add', async (_e, userId: string, doc: object) => {
     await col('bills').insertOne({ ...doc, userId })
+    return null
+  })
+  ipcMain.handle('db:bills:update', async (_e, userId: string, id: string, updates: object) => {
+    await col('bills').updateOne({ id, userId }, { $set: updates })
     return null
   })
   ipcMain.handle('db:bills:delete', async (_e, userId: string, id: string) => {
@@ -437,9 +442,33 @@ function registerChatStreamHandlers(win: BrowserWindow): void {
     return null
   })
 
+  // ── Presence Change Stream — watches sessions for lastActiveAt updates ──────
+  try {
+    presenceStream = col('sessions').watch([], { fullDocument: 'updateLookup' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    presenceStream.on('change', (change: any) => {
+      if (
+        (change.operationType === 'update' || change.operationType === 'replace') &&
+        change.fullDocument &&
+        change.fullDocument.userId &&
+        change.fullDocument.lastActiveAt
+      ) {
+        if (!win.isDestroyed()) {
+          win.webContents.send('presence:update', {
+            userId: change.fullDocument.userId,
+            lastActiveAt: change.fullDocument.lastActiveAt,
+          })
+        }
+      }
+    })
+  } catch {
+    // Presence stream unavailable — degraded gracefully
+  }
+
   win.on('closed', async () => {
     for (const [, stream] of activeStreams) await stream.close()
     activeStreams.clear()
+    if (presenceStream) { await presenceStream.close(); presenceStream = null }
   })
 }
 
