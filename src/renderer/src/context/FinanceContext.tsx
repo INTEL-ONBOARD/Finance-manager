@@ -42,10 +42,18 @@ export interface Bill {
 export interface Account {
   id: string;
   name: string;
-  type: 'checking' | 'savings' | 'credit' | 'investment';
+  type: 'checking' | 'savings' | 'credit' | 'investment' | 'loan';
   balance: number;
-  limit?: number; // for credit cards
+  limit?: number;             // credit: credit limit; loan: original loan amount
   color: string;
+  bank?: string;              // e.g. "Commercial Bank of Ceylon"
+  branch?: string;            // e.g. "Colombo Fort"
+  accountNumber?: string;     // optional, masked in UI
+  cardNetwork?: 'visa' | 'mastercard' | 'amex';
+  linkedAccountId?: string;   // credit: optional link to another account
+  interestRate?: number;      // savings/loan: annual %
+  loanMaturityDate?: string;  // loan: ISO date string
+  monthlyPayment?: number;    // loan: monthly instalment
 }
 
 export interface Notification {
@@ -73,6 +81,9 @@ interface FinanceContextType {
   addGoal: (g: Omit<SavingsGoal, 'id'>) => void;
   updateGoal: (id: string, updates: Partial<SavingsGoal>) => void;
   deleteGoal: (id: string) => void;
+  addAccount: (account: Omit<Account, 'id'>) => void;
+  updateAccount: (id: string, updates: Partial<Account>) => void;
+  deleteAccount: (id: string) => void;
   toggleBillPaid: (id: string) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
@@ -321,6 +332,25 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
     window.electron?.db.goals.delete(userId, id);
   }, [userId]);
 
+  const addAccount = useCallback((account: Omit<Account, 'id'>) => {
+    if (!userId) return;
+    const newDoc: Account = { ...account, id: `a${Date.now()}` };
+    setAccounts(prev => [...prev, newDoc]);
+    window.electron?.db.accounts.add(userId, newDoc);
+  }, [userId]);
+
+  const updateAccount = useCallback((id: string, updates: Partial<Account>) => {
+    if (!userId) return;
+    setAccounts(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    window.electron?.db.accounts.update(userId, id, updates);
+  }, [userId]);
+
+  const deleteAccount = useCallback((id: string) => {
+    if (!userId) return;
+    setAccounts(prev => prev.filter(a => a.id !== id));
+    window.electron?.db.accounts.delete(userId, id);
+  }, [userId]);
+
   const toggleBillPaid = useCallback((id: string) => {
     if (!userId) return;
     setBills(prev => prev.map(b => b.id === id ? { ...b, paid: !b.paid } : b));
@@ -345,6 +375,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
       currency, setCurrency,
       addTransaction, deleteTransaction,
       addGoal, updateGoal, deleteGoal,
+      addAccount, updateAccount, deleteAccount,
       toggleBillPaid,
       markNotificationRead, markAllNotificationsRead, addNotification,
       totalBalance, netWorth, monthlyIncome, monthlyExpenses,
