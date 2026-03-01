@@ -24,6 +24,10 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('auth:changePassword', userId, oldPassword, newPassword),
   },
 
+  dialog: {
+    openImage: (): Promise<string | null> => ipcRenderer.invoke('dialog:openImage'),
+  },
+
   // MongoDB-backed collections (all scoped by userId)
   db: {
     transactions: {
@@ -63,6 +67,12 @@ contextBridge.exposeInMainWorld('electron', {
     sessions: {
       list: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:sessions:list', userId),
       revoke: (userId: string, sessionId: string): Promise<void> => ipcRenderer.invoke('db:sessions:revoke', userId, sessionId),
+    },
+    user: {
+      avatar: {
+        save: (userId: string, filePath: string): Promise<{ ok: boolean; avatar?: string; error?: string }> =>
+          ipcRenderer.invoke('db:user:avatar:save', userId, filePath),
+      },
     },
   },
 
