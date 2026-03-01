@@ -1,9 +1,10 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, X, ShoppingCart, Utensils, Zap, Car, Home, Dumbbell, Wifi, Music, ArrowDownLeft, Tv, Package, Heart, Filter } from 'lucide-react';
+import { Plus, Search, X, ShoppingCart, Utensils, Zap, Car, Home, Dumbbell, Wifi, Music, ArrowDownLeft, Tv, Package, Heart, Filter, Upload } from 'lucide-react';
 import AppShell from '@/components/AppShell';
 const AddTransactionModal = lazy(() => import('@/components/modals/AddTransactionModal'));
 const TransactionDetailModal = lazy(() => import('@/components/modals/TransactionDetailModal'));
+const ImportStatementModal = lazy(() => import('@/components/modals/ImportStatementModal'));
 import { useFinance, Transaction, TransactionCategory } from '@/context/FinanceContext';
 import { formatCurrency } from '@/utils/formatCurrency';
 
@@ -31,6 +32,7 @@ const ALL_CATEGORIES: TransactionCategory[] = [
 export default function TransactionsPage() {
   const { transactions, monthlyIncome, monthlyExpenses, monthlySaved, currency } = useFinance();
   const [addOpen, setAddOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [selected, setSelected] = useState<Transaction | null>(null);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<TransactionCategory | 'All'>('All');
@@ -102,6 +104,12 @@ export default function TransactionsPage() {
               border: `1px solid ${showFilters ? 'rgba(96,165,250,0.3)' : 'var(--border)'}`,
             }}>
             <Filter size={13} /> Filters
+          </button>
+
+          <button onClick={() => setImportOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+            style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            <Upload size={13} /> Import
           </button>
 
           <button onClick={() => setAddOpen(true)}
@@ -188,6 +196,7 @@ export default function TransactionsPage() {
       <Suspense fallback={null}>
         <AddTransactionModal open={addOpen} onClose={() => setAddOpen(false)} />
         <TransactionDetailModal transaction={selected} onClose={() => setSelected(null)} />
+        <ImportStatementModal open={importOpen} onClose={() => setImportOpen(false)} />
       </Suspense>
     </AppShell>
   );
