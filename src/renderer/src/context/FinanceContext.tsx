@@ -3,6 +3,18 @@ import { formatCurrency } from '@/utils/formatCurrency';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+interface UserSettings {
+  currency?: string;
+  notifs?: {
+    billReminders: boolean;
+    goalProgress: boolean;
+    largeTransactions: boolean;
+    monthlyReport: boolean;
+    weeklyDigest: boolean;
+  };
+  [key: string]: unknown;
+}
+
 export type TransactionCategory =
   | 'Salary' | 'Freelance' | 'Investment' | 'Refund'
   | 'Groceries' | 'Dining' | 'Transport' | 'Utilities'
@@ -93,6 +105,9 @@ interface FinanceContextType {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   addNotification: (n: Omit<Notification, 'read'>) => void;
+  // Selected month for all month-scoped views (YYYY-MM)
+  selectedMonth: string;
+  setSelectedMonth: (month: string) => void;
   // Derived values
   totalBalance: number;
   netWorth: number;
@@ -199,7 +214,9 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currency, setCurrency] = useState<string>('USD');
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
 
   // Re-hydrate whenever the logged-in user changes
   useEffect(() => {
@@ -210,11 +227,13 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
       setAccounts([]);
       setNotifications([]);
       setCurrency('USD');
+      setSettings(null);
       return;
     }
     // Load currency setting separately (settings.get returns a single doc)
     window.electron.db.settings?.get(userId).then((s: Record<string, unknown> | null) => {
       setCurrency((s?.currency as string) ?? 'USD');
+      setSettings(s as UserSettings | null);
     }).catch(() => { /* keep default USD */ });
     Promise.all([
       window.electron.db.transactions.getAll(userId),
@@ -243,8 +262,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
   }, [userId]);
 
   // ── Derived values ─────────────────────────────────────────────────────────
-  const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
-  const monthTxns = transactions.filter(t => t.date.startsWith(currentMonth));
+  const monthTxns = transactions.filter(t => t.date.startsWith(selectedMonth));
 
   const monthlyIncome   = monthTxns.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
   const monthlyExpenses = monthTxns.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
@@ -273,7 +291,15 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
       return [doc, ...prev];
     });
     window.electron?.db.notifications.add(userId, doc);
-  }, [userId]);
+    const shouldNotify = (() => {
+      if (!settings?.notifs) return true; // no prefs set → default to on
+      if (n.type === 'alert')   return settings.notifs.billReminders !== false;
+      if (n.type === 'info')    return settings.notifs.monthlyReport !== false;
+      if (n.type === 'success') return settings.notifs.goalProgress !== false;
+      return true;
+    })();
+    if (shouldNotify) window.electron?.notify.send(n.title, n.body);
+  }, [userId, settings]);
 
   const addTransaction = useCallback((t: Omit<Transaction, 'id'>) => {
     if (!userId) return;
@@ -411,6 +437,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
     <FinanceContext.Provider value={{
       transactions, goals, bills, accounts, notifications,
       currency, setCurrency,
+      selectedMonth, setSelectedMonth,
       addTransaction, addTransactions, updateTransaction, deleteTransaction,
       addGoal, updateGoal, deleteGoal,
       addBill, updateBill, deleteBill, toggleBillPaid,

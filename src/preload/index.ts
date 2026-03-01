@@ -81,6 +81,10 @@ contextBridge.exposeInMainWorld('electron', {
     },
   },
 
+  notify: {
+    send: (title: string, body: string): Promise<void> => ipcRenderer.invoke('notify:send', title, body),
+  },
+
   // Chat
   chat: {
     listUsers: (selfId: string): Promise<unknown[]> =>

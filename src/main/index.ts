@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, session, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, shell, session, ipcMain, dialog, Notification } from 'electron'
 import { join } from 'path'
 import { MongoClient, Db, Collection, ChangeStream } from 'mongodb'
 import { autoUpdater } from 'electron-updater'
@@ -159,6 +159,17 @@ function registerIpcHandlers(): void {
   })
   ipcMain.handle('db:notifications:add', async (_e, userId: string, doc: object) => {
     await col('notifications').insertOne({ ...doc, userId })
+    return null
+  })
+
+  ipcMain.handle('notify:send', (_e, title: string, body: string) => {
+    try {
+      if (Notification.isSupported()) {
+        new Notification({ title, body, silent: false }).show()
+      }
+    } catch {
+      // Notification unavailable (e.g. missing libnotify on Linux) — ignore silently
+    }
     return null
   })
 

@@ -94,6 +94,9 @@ declare global {
           };
         };
       };
+      notify: {
+        send: (title: string, body: string) => Promise<void>;
+      };
       updater: {
         check:          () => Promise<void>;
         download:       () => Promise<void>;
