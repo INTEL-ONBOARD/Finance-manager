@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, session, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, session, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { MongoClient, Db, Collection, ChangeStream } from 'mongodb'
 import { autoUpdater } from 'electron-updater'
@@ -209,6 +209,31 @@ function registerIpcHandlers(): void {
   ipcMain.handle('db:sessions:revoke', async (_e, userId: string, sessionId: string) => {
     await col('sessions').deleteOne({ userId, sessionId })
     return null
+  })
+
+  // ── Avatar ────────────────────────────────────────────────────────────────────
+  ipcMain.handle('dialog:openImage', async () => {
+    const result = await dialog.showOpenDialog({
+      title: 'Choose Profile Photo',
+      filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'] }],
+      properties: ['openFile']
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('db:user:avatar:save', async (_e, userId: string, filePath: string) => {
+    const { readFileSync, statSync } = require('fs') as typeof import('fs')
+    const stat = statSync(filePath)
+    if (stat.size > 2 * 1024 * 1024) {
+      return { ok: false, error: 'Image must be under 2MB' }
+    }
+    const ext = filePath.split('.').pop()?.toLowerCase() ?? 'jpeg'
+    const mimeMap: Record<string, string> = { jpg: 'jpeg', jpeg: 'jpeg', png: 'png', webp: 'webp', gif: 'gif' }
+    const mime = mimeMap[ext] ?? 'jpeg'
+    const data = readFileSync(filePath)
+    const avatar = `data:image/${mime};base64,${data.toString('base64')}`
+    await col('users').updateOne({ id: userId }, { $set: { avatar } }, { upsert: false })
+    return { ok: true, avatar }
   })
 
   // ── Change Password ───────────────────────────────────────────────────────────
