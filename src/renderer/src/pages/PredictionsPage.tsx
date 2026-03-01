@@ -1,10 +1,15 @@
 import { Target, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const gridBg = {
+    backgroundImage: 'linear-gradient(var(--text-primary) 1px, transparent 1px), linear-gradient(to right, var(--text-primary) 1px, transparent 1px)',
+    backgroundSize: '24px 24px',
+};
+
 export default function PredictionsPage() {
     return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8 relative">
-                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(var(--text-primary) 1px, transparent 1px), linear-gradient(to right, var(--text-primary) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                <div className="absolute inset-0 opacity-[0.04]" style={gridBg} />
 
                 <div className="relative z-10 flex flex-col items-center">
                     <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-[#84cc16] mb-6 relative" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
@@ -25,7 +30,6 @@ export default function PredictionsPage() {
                         Upgrade to Pro
                     </Link>
                 </div>
-            </div>
         </div>
     );
 }

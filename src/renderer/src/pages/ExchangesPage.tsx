@@ -30,7 +30,6 @@ export default function ExchangesPage() {
                         Upgrade to Pro
                     </Link>
                 </div>
-            </div>
         </div>
     );
 }
