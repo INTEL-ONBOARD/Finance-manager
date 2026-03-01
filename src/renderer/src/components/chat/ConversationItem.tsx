@@ -70,11 +70,11 @@ export default function ConversationItem({
         ) : (
           <Avatar name={name} avatar={avatar} size={32} />
         )}
-        {online && (
+        {!isGroup && (
           <span style={{
             position: 'absolute', bottom: 0, right: 0,
             width: 9, height: 9, borderRadius: '50%',
-            background: '#22c55e',
+            background: online ? '#22c55e' : '#6b7280',
             border: '2px solid var(--bg-sidebar, var(--bg-main))',
           }} />
         )}
