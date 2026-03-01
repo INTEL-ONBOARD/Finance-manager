@@ -12,6 +12,7 @@ const CATEGORIES: TransactionCategory[] = [
 ];
 
 interface TxRow {
+  id: string;
   name: string;
   amount: string;
   isExpense: boolean;
@@ -21,6 +22,7 @@ interface TxRow {
 
 function emptyRow(): TxRow {
   return {
+    id: crypto.randomUUID(),
     name: '',
     amount: '',
     isExpense: true,
@@ -79,6 +81,7 @@ export default function StepAddTransactions({ onNext, onSkip, onBack }: StepAddT
       if (parts.length < 2) continue;
       const amt = parseFloat(parts[amtIdx] || '0');
       parsed.push({
+        id: crypto.randomUUID(),
         name: parts[nameIdx] || 'Transaction',
         amount: Math.abs(amt).toString(),
         isExpense: amt < 0,
@@ -155,14 +158,14 @@ export default function StepAddTransactions({ onNext, onSkip, onBack }: StepAddT
       {tab === 'manual' && (
         <div className="flex flex-col gap-3">
           {rows.map((row, i) => (
-            <div key={i} className="flex gap-2 items-end p-3 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+            <div key={row.id} className="flex gap-2 items-end p-3 rounded-xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
               {/* +/- toggle */}
               <button type="button"
                 onClick={() => updateRow(i, 'isExpense', !row.isExpense)}
                 style={{
                   width: 32, height: 32, borderRadius: 8, border: 'none', cursor: 'pointer', flexShrink: 0,
                   background: row.isExpense ? 'rgba(248,113,113,0.15)' : 'rgba(34,197,94,0.15)',
-                  color: row.isExpense ? '#f87171' : '#22c55e',
+                  color: row.isExpense ? 'var(--accent-red)' : 'var(--accent-green)',
                   fontSize: 18, fontWeight: 700, lineHeight: 1,
                 }}>
                 {row.isExpense ? '−' : '+'}
@@ -233,7 +236,7 @@ export default function StepAddTransactions({ onNext, onSkip, onBack }: StepAddT
                     {csvPreview.map((r, i) => (
                       <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
                         <td style={{ padding: '6px 10px', color: 'var(--text-primary)' }}>{r.name}</td>
-                        <td style={{ padding: '6px 10px', color: r.isExpense ? '#f87171' : '#22c55e', fontFamily: 'Geist Mono, monospace' }}>
+                        <td style={{ padding: '6px 10px', color: r.isExpense ? 'var(--accent-red)' : 'var(--accent-green)', fontFamily: 'Geist Mono, monospace' }}>
                           {r.isExpense ? '-' : '+'}{r.amount}
                         </td>
                         <td style={{ padding: '6px 10px', color: 'var(--text-secondary)' }}>{r.category}</td>
@@ -249,11 +252,11 @@ export default function StepAddTransactions({ onNext, onSkip, onBack }: StepAddT
               </button>
             </div>
           )}
-          {csvError && <p style={{ fontSize: 13, color: '#f87171' }}>{csvError}</p>}
+          {csvError && <p style={{ fontSize: 13, color: 'var(--accent-red)' }}>{csvError}</p>}
         </div>
       )}
 
-      {error && <p style={{ fontSize: 13, color: '#f87171' }}>{error}</p>}
+      {error && <p style={{ fontSize: 13, color: 'var(--accent-red)' }}>{error}</p>}
 
       {/* Navigation buttons */}
       <div className="flex gap-2 mt-1">

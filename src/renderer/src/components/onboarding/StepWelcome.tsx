@@ -8,7 +8,7 @@ interface StepWelcomeProps {
 }
 
 export default function StepWelcome({ name, avatar, onNext }: StepWelcomeProps) {
-  const initial = name.trim().charAt(0).toUpperCase();
+  const initial = name.trim().charAt(0).toUpperCase() || '?';
 
   return (
     <div className="flex flex-col items-center text-center gap-6">

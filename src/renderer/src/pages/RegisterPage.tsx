@@ -37,7 +37,7 @@ export default function RegisterPage() {
         setLoading(true);
         try {
             await register(name, email, password, selectedAvatar);
-            localStorage.setItem('finmate-onboarded', 'false');
+            localStorage.setItem('finwise-onboarded', 'false');
             navigate('/onboarding');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Registration failed');

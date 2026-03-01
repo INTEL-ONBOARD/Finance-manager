@@ -5,7 +5,7 @@ export default function OnboardingPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (localStorage.getItem('finmate-onboarded') !== 'false') {
+    if (localStorage.getItem('finwise-onboarded') !== 'false') {
       navigate('/', { replace: true });
     }
   }, [navigate]);

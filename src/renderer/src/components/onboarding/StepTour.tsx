@@ -52,7 +52,7 @@ export default function StepTour({ onFinish }: StepTourProps) {
   };
 
   const finish = () => {
-    localStorage.setItem('finmate-onboarded', 'true');
+    localStorage.setItem('finwise-onboarded', 'true');
     onFinish();
   };
 
