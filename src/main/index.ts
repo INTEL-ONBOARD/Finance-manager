@@ -181,7 +181,7 @@ function registerIpcHandlers(): void {
     const deviceLabel = process.platform === 'darwin' ? 'macOS' : process.platform === 'win32' ? 'Windows' : 'Linux'
     const now = new Date().toISOString()
     await col('sessions').insertOne({ sessionId, userId: doc.id, deviceLabel, createdAt: now, lastActiveAt: now })
-    return { ok: true, user: { id: doc.id, name: doc.name, email: doc.email }, sessionId }
+    return { ok: true, user: { id: doc.id, name: doc.name, email: doc.email, avatar: (doc.avatar as string | undefined) ?? null }, sessionId }
   })
 
   ipcMain.handle('auth:userExists', async (_e, email: string) => {
@@ -216,7 +216,7 @@ function registerIpcHandlers(): void {
   ipcMain.handle('dialog:openImage', async () => {
     const result = await dialog.showOpenDialog({
       title: 'Choose Profile Photo',
-      filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'] }],
+      filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
       properties: ['openFile']
     })
     return result.canceled ? null : result.filePaths[0]

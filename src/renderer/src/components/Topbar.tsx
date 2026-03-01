@@ -258,7 +258,10 @@ export default function Topbar() {
             {/* User avatar */}
             <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center border shrink-0"
               style={{ background: 'var(--accent-brand)', color: '#fff', borderColor: 'var(--border-light)' }}>
-              <div className="text-[13px] font-semibold" style={{ letterSpacing: '0.02em' }}>{initials}</div>
+              {user?.avatar
+                ? <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+                : <div className="text-[13px] font-semibold" style={{ letterSpacing: '0.02em' }}>{initials}</div>
+              }
             </div>
         </div>
       </div>

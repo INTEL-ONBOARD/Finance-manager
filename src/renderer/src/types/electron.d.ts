@@ -32,8 +32,8 @@ declare global {
       getVersion: () => Promise<string>;
       openExternal: (url: string) => Promise<void>;
       auth: {
-        register: (name: string, email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; sessionId?: string; error?: string }>;
-        login: (email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string }; sessionId?: string; error?: string }>;
+        register: (name: string, email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string; avatar?: string | null }; sessionId?: string; error?: string }>;
+        login: (email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string; avatar?: string | null }; sessionId?: string; error?: string }>;
         userExists: (email: string) => Promise<boolean>;
         changePassword: (userId: string, oldPassword: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
       };
