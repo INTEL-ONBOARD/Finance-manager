@@ -99,6 +99,11 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.on('chat:message:new', l)
       return () => ipcRenderer.removeListener('chat:message:new', l)
     },
+    onPresenceUpdate(cb: (payload: { userId: string; lastActiveAt: string }) => void): () => void {
+      const l = (_e: Electron.IpcRendererEvent, payload: { userId: string; lastActiveAt: string }) => cb(payload)
+      ipcRenderer.on('presence:update', l)
+      return () => ipcRenderer.removeListener('presence:update', l)
+    },
   },
 
   // Auto-updater

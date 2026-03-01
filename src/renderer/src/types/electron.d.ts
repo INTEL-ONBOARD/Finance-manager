@@ -112,6 +112,7 @@ declare global {
         watchConversation:  (conversationId: string) => Promise<void>;
         unwatchConversation:(conversationId: string) => Promise<void>;
         onMessage:          (cb: (payload: { conversationId: string; message: import('@/types/chat').ChatMessage }) => void) => () => void;
+        onPresenceUpdate:   (cb: (payload: { userId: string; lastActiveAt: string }) => void) => () => void;
       };
     };
   }
