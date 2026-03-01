@@ -10,7 +10,7 @@ const COLOR_OPTIONS = ['#4ade80', '#60a5fa', '#f59e0b', '#f87171', '#a78bfa', '#
 interface Props { open: boolean; onClose: () => void; }
 
 export default function AddGoalModal({ open, onClose }: Props) {
-  const { addGoal } = useFinance();
+  const { addGoal, currency } = useFinance();
   const [form, setForm] = useState({
     name: '', target: '', current: '0',
     icon: 'Star', color: '#4ade80', deadline: '',
@@ -68,13 +68,13 @@ export default function AddGoalModal({ open, onClose }: Props) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target ($)</label>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target ({currency})</label>
                   <input value={form.target} onChange={e => set('target', e.target.value)} type="number" min="0" placeholder="5000"
                     className="w-full mt-1 px-3 py-2.5 rounded-xl outline-none"
                     style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'Geist Mono, monospace' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Already Saved ($)</label>
+                  <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Already Saved ({currency})</label>
                   <input value={form.current} onChange={e => set('current', e.target.value)} type="number" min="0" placeholder="0"
                     className="w-full mt-1 px-3 py-2.5 rounded-xl outline-none"
                     style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'Geist Mono, monospace' }} />

@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld('electron', {
       getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:bills:getAll', userId),
       togglePaid: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:bills:togglePaid', userId, id),
       add: (userId: string, doc: unknown): Promise<void> => ipcRenderer.invoke('db:bills:add', userId, doc),
+      update: (userId: string, id: string, updates: unknown): Promise<void> => ipcRenderer.invoke('db:bills:update', userId, id, updates),
       delete: (userId: string, id: string): Promise<void> => ipcRenderer.invoke('db:bills:delete', userId, id),
     },
     accounts: {

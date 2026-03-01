@@ -77,14 +77,18 @@ interface FinanceContextType {
   currency: string;
   setCurrency: (c: string) => void;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
+  updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   addGoal: (g: Omit<SavingsGoal, 'id'>) => void;
   updateGoal: (id: string, updates: Partial<SavingsGoal>) => void;
   deleteGoal: (id: string) => void;
-  addAccount: (account: Omit<Account, 'id'>) => void;
+  addBill: (b: Omit<Bill, 'id'>) => void;
+  updateBill: (id: string, updates: Partial<Bill>) => void;
+  deleteBill: (id: string) => void;
+  toggleBillPaid: (id: string) => void;
+  addAccount: (a: Omit<Account, 'id'>) => void;
   updateAccount: (id: string, updates: Partial<Account>) => void;
   deleteAccount: (id: string) => void;
-  toggleBillPaid: (id: string) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   addNotification: (n: Omit<Notification, 'read'>) => void;
@@ -286,6 +290,12 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
     }
   }, [userId, addNotification, currency]);
 
+  const updateTransaction = useCallback((id: string, updates: Partial<Transaction>) => {
+    if (!userId) return;
+    setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    window.electron?.db.transactions.update(userId, id, updates);
+  }, [userId]);
+
   const deleteTransaction = useCallback((id: string) => {
     if (!userId) return;
     setTransactions(prev => prev.filter(t => t.id !== id));
@@ -332,23 +342,23 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
     window.electron?.db.goals.delete(userId, id);
   }, [userId]);
 
-  const addAccount = useCallback((account: Omit<Account, 'id'>) => {
+  const addBill = useCallback((b: Omit<Bill, 'id'>) => {
     if (!userId) return;
-    const newDoc: Account = { ...account, id: `a${Date.now()}` };
-    setAccounts(prev => [...prev, newDoc]);
-    window.electron?.db.accounts.add(userId, newDoc);
+    const newDoc: Bill = { ...b, id: `b${Date.now()}` };
+    setBills(prev => [...prev, newDoc]);
+    window.electron?.db.bills.add(userId, newDoc);
   }, [userId]);
 
-  const updateAccount = useCallback((id: string, updates: Partial<Account>) => {
+  const updateBill = useCallback((id: string, updates: Partial<Bill>) => {
     if (!userId) return;
-    setAccounts(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
-    window.electron?.db.accounts.update(userId, id, updates);
+    setBills(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+    window.electron?.db.bills.update(userId, id, updates);
   }, [userId]);
 
-  const deleteAccount = useCallback((id: string) => {
+  const deleteBill = useCallback((id: string) => {
     if (!userId) return;
-    setAccounts(prev => prev.filter(a => a.id !== id));
-    window.electron?.db.accounts.delete(userId, id);
+    setBills(prev => prev.filter(b => b.id !== id));
+    window.electron?.db.bills.delete(userId, id);
   }, [userId]);
 
   const toggleBillPaid = useCallback((id: string) => {
@@ -369,14 +379,33 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
     window.electron?.db.notifications.markAllRead(userId);
   }, [userId]);
 
+  const addAccount = useCallback((a: Omit<Account, 'id'>) => {
+    if (!userId) return;
+    const newDoc: Account = { ...a, id: `a${Date.now()}` };
+    setAccounts(prev => [...prev, newDoc]);
+    window.electron?.db.accounts.add(userId, newDoc);
+  }, [userId]);
+
+  const updateAccount = useCallback((id: string, updates: Partial<Account>) => {
+    if (!userId) return;
+    setAccounts(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    window.electron?.db.accounts.update(userId, id, updates);
+  }, [userId]);
+
+  const deleteAccount = useCallback((id: string) => {
+    if (!userId) return;
+    setAccounts(prev => prev.filter(a => a.id !== id));
+    window.electron?.db.accounts.delete(userId, id);
+  }, [userId]);
+
   return (
     <FinanceContext.Provider value={{
       transactions, goals, bills, accounts, notifications,
       currency, setCurrency,
-      addTransaction, deleteTransaction,
+      addTransaction, updateTransaction, deleteTransaction,
       addGoal, updateGoal, deleteGoal,
+      addBill, updateBill, deleteBill, toggleBillPaid,
       addAccount, updateAccount, deleteAccount,
-      toggleBillPaid,
       markNotificationRead, markAllNotificationsRead, addNotification,
       totalBalance, netWorth, monthlyIncome, monthlyExpenses,
       monthlySaved, savingsRate, creditUtilization,

@@ -444,6 +444,7 @@ function registerChatStreamHandlers(win: BrowserWindow): void {
 
   // ── Presence Change Stream — watches sessions for lastActiveAt updates ──────
   try {
+    if (presenceStream) return
     presenceStream = col('sessions').watch([], { fullDocument: 'updateLookup' })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     presenceStream.on('change', (change: any) => {
@@ -461,8 +462,11 @@ function registerChatStreamHandlers(win: BrowserWindow): void {
         }
       }
     })
-  } catch {
-    // Presence stream unavailable — degraded gracefully
+    presenceStream.on('error', (err) => {
+      console.warn('Presence stream error:', err)
+    })
+  } catch (err) {
+    console.warn('Presence stream failed to start:', err)
   }
 
   win.on('closed', async () => {

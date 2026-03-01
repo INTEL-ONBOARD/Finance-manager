@@ -81,26 +81,32 @@ export default function BudgetPage() {
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
           className="card p-5">
           <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>Spending by Category</h3>
-          <div className="flex gap-4">
-            <div style={{ width: 140, height: 140, flexShrink: 0, overflow: 'visible' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={categoryBreakdown} dataKey="spent" innerRadius={40} outerRadius={62} paddingAngle={2} strokeWidth={0}>
-                    {categoryBreakdown.map(e => <Cell key={e.category} fill={e.color} opacity={0.9} />)}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+          {categoryBreakdown.length === 0 ? (
+            <div className="flex items-center justify-center" style={{ height: 140, color: 'var(--text-muted)', fontSize: 13 }}>
+              No spending recorded this month
             </div>
-            <div className="flex-1 flex flex-col gap-1.5 justify-center">
-              {categoryBreakdown.slice(0, 5).map(c => (
-                <div key={c.category} className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
-                  <span className="flex-1 text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{c.category}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>{formatCurrency(c.spent, currency, 0)}</span>
-                </div>
-              ))}
+          ) : (
+            <div className="flex gap-4">
+              <div style={{ width: 140, height: 140, flexShrink: 0, overflow: 'visible' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={categoryBreakdown} dataKey="spent" innerRadius={40} outerRadius={62} paddingAngle={2} strokeWidth={0}>
+                      {categoryBreakdown.map(e => <Cell key={e.category} fill={e.color} opacity={0.9} />)}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex-1 flex flex-col gap-1.5 justify-center">
+                {categoryBreakdown.slice(0, 5).map(c => (
+                  <div key={c.category} className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
+                    <span className="flex-1 text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{c.category}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Geist Mono, monospace' }}>{formatCurrency(c.spent, currency, 0)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </motion.div>
       </div>
 

@@ -62,6 +62,7 @@ declare global {
           getAll: (userId: string) => Promise<Bill[]>;
           togglePaid: (userId: string, id: string) => Promise<void>;
           add: (userId: string, doc: Omit<Bill, 'id'>) => Promise<void>;
+          update: (userId: string, id: string, updates: Partial<Bill>) => Promise<void>;
           delete: (userId: string, id: string) => Promise<void>;
         };
         accounts: {
