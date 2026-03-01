@@ -11,13 +11,31 @@ function hashName(name: string): number {
 
 interface AvatarProps {
   name: string;
+  avatar?: string | null;
   size?: number;
 }
 
-export default function Avatar({ name, size = 32 }: AvatarProps) {
+export default function Avatar({ name, avatar, size = 32 }: AvatarProps) {
   const color = COLORS[hashName(name) % COLORS.length];
   const initial = name.trim().charAt(0).toUpperCase();
   const fontSize = Math.round(size * 0.42);
+
+  if (avatar) {
+    return (
+      <img
+        src={avatar}
+        alt={name}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          objectFit: 'cover',
+          flexShrink: 0,
+          border: `1.5px solid ${color}50`,
+        }}
+      />
+    );
+  }
 
   return (
     <div

@@ -20,11 +20,10 @@ export default function ConversationSidebar() {
     markConversationRead(id);
   };
 
-  function getConversationName(id: string): string {
-    if (id === 'group') return 'Group Chat';
+  function getPeer(id: string) {
+    if (id === 'group') return null;
     // IDs may contain underscores (e.g. u_123) so match directly instead of splitting
-    const peer = allUsers.find(u => id.includes(u.id));
-    return peer?.name ?? 'Direct Message';
+    return allUsers.find(u => id.includes(u.id)) ?? null;
   }
 
   return (
@@ -57,12 +56,14 @@ export default function ConversationSidebar() {
       <div className="flex-1 overflow-y-auto p-2" style={{ scrollbarWidth: 'thin' }}>
         {sorted.map(c => {
           const isGroup = c.id === 'group';
-          const name = isGroup ? 'Group Chat' : getConversationName(c.id);
+          const peer = getPeer(c.id);
+          const name = isGroup ? 'Group Chat' : (peer?.name ?? 'Direct Message');
           return (
             <ConversationItem
               key={c.id}
               id={c.id}
               name={name}
+              avatar={peer?.avatar}
               lastMessage={c.lastMessage}
               lastMessageAt={c.lastMessageAt}
               unread={unreadCounts[c.id] ?? 0}

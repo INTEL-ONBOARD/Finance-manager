@@ -89,7 +89,7 @@ export default function NewDMModal({ open, onClose }: Props) {
                   onClick={() => handleSelect(u)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-white/5 text-left"
                 >
-                  <Avatar name={u.name} size={32} />
+                  <Avatar name={u.name} avatar={u.avatar} size={32} />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{u.name}</div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{u.email}</div>

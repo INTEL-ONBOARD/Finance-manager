@@ -34,7 +34,7 @@ export default function ThreadHeader() {
           #
         </div>
       ) : (
-        <Avatar name={name} size={36} />
+        <Avatar name={name} avatar={peer?.avatar} size={36} />
       )}
       <div>
         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{name}</div>

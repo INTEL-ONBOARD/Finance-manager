@@ -83,6 +83,10 @@ function registerIpcHandlers(): void {
     await col('transactions').deleteOne({ id, userId })
     return null
   })
+  ipcMain.handle('db:transactions:update', async (_e, userId: string, id: string, updates: object) => {
+    await col('transactions').updateOne({ id, userId }, { $set: updates })
+    return null
+  })
 
   // ── Goals ────────────────────────────────────────────────────────────────────
   ipcMain.handle('db:goals:getAll', async (_e, userId: string) =>
@@ -272,7 +276,7 @@ function registerIpcHandlers(): void {
 
   // ── Chat ──────────────────────────────────────────────────────────────────────
   ipcMain.handle('chat:users:list', async (_e, selfId: string) =>
-    col('users').find({ id: { $ne: selfId } }, { projection: { _id: 0, id: 1, name: 1, email: 1 } }).toArray()
+    col('users').find({ id: { $ne: selfId } }, { projection: { _id: 0, id: 1, name: 1, email: 1, avatar: 1 } }).toArray()
   )
 
   ipcMain.handle('chat:messages:fetch', async (_e, conversationId: string, limit: number, beforeSentAt?: string) => {

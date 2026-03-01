@@ -3,6 +3,7 @@ import Avatar from './Avatar';
 interface ConversationItemProps {
   id: string;
   name: string;
+  avatar?: string | null;
   lastMessage: string;
   lastMessageAt: string;
   unread: number;
@@ -22,7 +23,7 @@ function relativeTime(iso: string): string {
 }
 
 export default function ConversationItem({
-  id, name, lastMessage, lastMessageAt, unread, isActive, onClick,
+  id, name, avatar, lastMessage, lastMessageAt, unread, isActive, onClick,
 }: ConversationItemProps) {
   const isGroup = id === 'group';
 
@@ -47,7 +48,7 @@ export default function ConversationItem({
           #
         </div>
       ) : (
-        <Avatar name={name} size={32} />
+        <Avatar name={name} avatar={avatar} size={32} />
       )}
 
       <div className="flex-1 min-w-0">
