@@ -77,6 +77,7 @@ interface FinanceContextType {
   currency: string;
   setCurrency: (c: string) => void;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
+  addTransactions: (transactions: Omit<Transaction, 'id'>[]) => void;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
   addGoal: (g: Omit<SavingsGoal, 'id'>) => void;
@@ -290,6 +291,14 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
     }
   }, [userId, addNotification, currency]);
 
+  const addTransactions = useCallback((items: Omit<Transaction, 'id'>[]) => {
+    if (!userId) return;
+    const now = Date.now();
+    const newDocs: Transaction[] = items.map((t, i) => ({ ...t, id: `t${now}_${i}` }));
+    setTransactions(prev => [...newDocs, ...prev]);
+    newDocs.forEach(doc => window.electron?.db.transactions.add(userId!, doc));
+  }, [userId]);
+
   const updateTransaction = useCallback((id: string, updates: Partial<Transaction>) => {
     if (!userId) return;
     setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
@@ -402,7 +411,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
     <FinanceContext.Provider value={{
       transactions, goals, bills, accounts, notifications,
       currency, setCurrency,
-      addTransaction, updateTransaction, deleteTransaction,
+      addTransaction, addTransactions, updateTransaction, deleteTransaction,
       addGoal, updateGoal, deleteGoal,
       addBill, updateBill, deleteBill, toggleBillPaid,
       addAccount, updateAccount, deleteAccount,
