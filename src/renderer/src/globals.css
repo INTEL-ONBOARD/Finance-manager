@@ -50,6 +50,7 @@
   --bg-secondary:  #161b27;
   --bg-card:       #161b27;
   --bg-card-hover: #1c2236;
+  --bg-modal:      #1a2035;
   --bg-sidebar:    #0d1117;
   --border:        #1e293b;
   --border-light:  #334155;
@@ -72,6 +73,7 @@
   --bg-secondary:  #f2f4f7;
   --bg-card:       #ffffff;
   --bg-card-hover: #f9fafb;
+  --bg-modal:      #ffffff;
   --bg-sidebar:    #ffffff;
   --border:        #eaecf0;
   --border-light:  #f2f4f7;

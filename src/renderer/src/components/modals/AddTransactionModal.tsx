@@ -66,11 +66,11 @@ export default function AddTransactionModal({ open, onClose }: Props) {
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md rounded-2xl p-6"
-            style={{ background: '#1a2035', border: '1px solid var(--border-light)', boxShadow: '0 32px 64px rgba(0,0,0,0.6)' }}
+            style={{ background: 'var(--bg-modal)', border: '1px solid var(--border-light)', boxShadow: '0 32px 64px rgba(0,0,0,0.4)' }}
           >
             <div className="flex items-center justify-between mb-5">
               <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Add Transaction</h2>
-              <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors" style={{ color: 'var(--text-muted)' }}>
+              <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors" style={{ color: 'var(--text-muted)' }}>
                 <X size={15} />
               </button>
             </div>
@@ -151,7 +151,7 @@ export default function AddTransactionModal({ open, onClose }: Props) {
             {error && <p style={{ fontSize: 12, color: 'var(--accent-red)', marginTop: 8 }}>{error}</p>}
 
             <div className="flex gap-3 mt-5">
-              <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-white/5"
+              <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-black/5"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>Cancel</button>
               <button onClick={handleSubmit}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110 flex items-center justify-center gap-2"
