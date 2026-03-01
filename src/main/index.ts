@@ -213,8 +213,9 @@ function registerIpcHandlers(): void {
   })
 
   // ── Avatar ────────────────────────────────────────────────────────────────────
-  ipcMain.handle('dialog:openImage', async () => {
-    const result = await dialog.showOpenDialog({
+  ipcMain.handle('dialog:openImage', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0]
+    const result = await dialog.showOpenDialog(win, {
       title: 'Choose Profile Photo',
       filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
       properties: ['openFile']
