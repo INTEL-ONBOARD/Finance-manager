@@ -259,15 +259,15 @@ export default function StepAddTransactions({ onNext, onSkip, onBack }: StepAddT
       {error && <p style={{ fontSize: 13, color: 'var(--accent-red)' }}>{error}</p>}
 
       {/* Navigation buttons */}
-      <div className="flex gap-2 mt-1">
+      <div className="flex gap-3 mt-1">
         <button type="button" onClick={onBack}
           className="flex items-center gap-1 px-4 py-2.5 rounded-xl transition-all hover:bg-black/5"
-          style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>
+          style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap' }}>
           <ArrowLeft size={15} /> Back
         </button>
         <button type="button" onClick={onSkip}
           className="flex items-center gap-1 px-4 py-2.5 rounded-xl transition-all hover:bg-black/5"
-          style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer' }}>
+          style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap' }}>
           <SkipForward size={15} /> Skip for now
         </button>
         <motion.button

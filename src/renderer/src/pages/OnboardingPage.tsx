@@ -108,7 +108,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Step content with slide animation */}
-        <div className="w-full max-w-lg overflow-hidden">
+        <div className="w-full max-w-lg">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={step}

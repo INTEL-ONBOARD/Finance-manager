@@ -52,7 +52,9 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
-  return !isAuthenticated ? children : <Navigate to="/" replace />
+  if (!isAuthenticated) return children
+  if (localStorage.getItem('finwise-onboarded') === 'false') return <Navigate to="/onboarding" replace />
+  return <Navigate to="/" replace />
 }
 
 // Onboarding route: must be authenticated AND have finwise-onboarded='false'
