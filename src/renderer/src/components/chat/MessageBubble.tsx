@@ -19,8 +19,8 @@ export default function MessageBubble({ message, isSelf }: MessageBubbleProps) {
           <div
             className="px-4 py-2.5 rounded-2xl rounded-tr-sm"
             style={{
-              background: 'var(--accent-brand-dim, rgba(99,102,241,0.18))',
-              border: '1px solid rgba(99,102,241,0.25)',
+              background: 'var(--accent-brand-dim)',
+              border: '1px solid var(--border-light)',
             }}
           >
             <p style={{ fontSize: 13.5, color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word' }}>
@@ -45,8 +45,8 @@ export default function MessageBubble({ message, isSelf }: MessageBubbleProps) {
         <div
           className="px-4 py-2.5 rounded-2xl rounded-tl-sm"
           style={{
-            background: 'var(--bg-card, #1a2035)',
-            border: '1px solid var(--border, rgba(255,255,255,0.06))',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
           }}
         >
           <p style={{ fontSize: 13.5, color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word' }}>

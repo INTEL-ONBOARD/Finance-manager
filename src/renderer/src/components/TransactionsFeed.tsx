@@ -68,7 +68,7 @@ export default function TransactionsFeed() {
             </div>
             <button onClick={() => setAddOpen(true)}
               className="flex items-center gap-1 px-2.5 py-1 rounded-[10px] text-xs font-bold transition-all hover:brightness-110 shadow-sm"
-              style={{ background: '#0f172a', color: 'white' }}>
+              style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
               <Plus size={12} strokeWidth={3} /> Add
             </button>
           </div>

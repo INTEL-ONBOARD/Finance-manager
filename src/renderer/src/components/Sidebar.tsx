@@ -59,7 +59,7 @@ export default function Sidebar({ theme, onThemeToggle, isCollapsed, onToggleCol
         {!isCollapsed && (
           <span className="whitespace-nowrap" style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: 19, letterSpacing: '-0.01em' }}>FinMate</span>
         )}
-        <button onClick={onToggleCollapse} className={`text-[#98a2b3] hover:text-[#667085] transition-colors ${isCollapsed ? '' : 'ml-auto'}`} style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <button onClick={onToggleCollapse} className={`transition-colors ${isCollapsed ? '' : 'ml-auto'}`} style={{ color: 'var(--text-muted)', WebkitAppRegion: 'no-drag' } as any}>
           <PanelLeft size={20} strokeWidth={1.5} />
         </button>
       </div>
@@ -109,9 +109,9 @@ export default function Sidebar({ theme, onThemeToggle, isCollapsed, onToggleCol
               <button key={t} onClick={() => theme !== t && onThemeToggle()}
                 className="flex-1 flex items-center justify-center gap-2 rounded-lg transition-all duration-200"
                 style={{
-                  background: theme === t ? 'white' : 'transparent',
+                  background: theme === t ? 'var(--bg-modal)' : 'transparent',
                   boxShadow: theme === t ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                  color: theme === t ? '#0f172a' : 'var(--text-secondary)',
+                  color: theme === t ? 'var(--text-primary)' : 'var(--text-secondary)',
                   fontSize: 13, fontWeight: 600, padding: '7px 0',
                 }}>
                 {t === 'light' ? <Sun size={14} /> : <Moon size={14} />}
@@ -136,7 +136,7 @@ export default function Sidebar({ theme, onThemeToggle, isCollapsed, onToggleCol
             </p>
             <Link to="/settings"
               className="block w-full py-2.5 rounded-lg text-[13px] font-bold text-center transition-all duration-200 shadow-sm"
-              style={{ background: '#0f172a', color: 'white', textDecoration: 'none' }}>
+              style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', textDecoration: 'none', border: '1px solid var(--border)' }}>
               Upgrade Now
             </Link>
           </div>
