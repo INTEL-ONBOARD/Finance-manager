@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Hexagon, Lock, Mail, ArrowRight, Download, RotateCcw } from 'lucide-react';
+import { Hexagon, Lock, Mail, ArrowRight, Download, RotateCcw, WifiOff, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -12,10 +12,28 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [dbStatus, setDbStatus] = useState<{ ready: boolean; error: string | null } | null>(null);
+    const [retrying, setRetrying] = useState(false);
 
     type UpdateStatus = 'idle' | 'available' | 'downloading' | 'downloaded' | 'installing';
     const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
     const [updateProgress, setUpdateProgress] = useState(0);
+
+    useEffect(() => {
+        window.electron?.db.status().then(setDbStatus).catch(() => setDbStatus({ ready: false, error: 'Could not reach the app backend.' }));
+    }, []);
+
+    const handleRetryConnection = async () => {
+        setRetrying(true);
+        try {
+            const result = await window.electron?.db.reconnect();
+            const status = await window.electron?.db.status();
+            setDbStatus(status ?? null);
+            if (result?.ok) setError('');
+        } finally {
+            setRetrying(false);
+        }
+    };
 
     useEffect(() => {
         const el = window.electron?.updater;
@@ -188,6 +206,35 @@ export default function LoginPage() {
                             Enter your credentials to access your account.
                         </p>
                     </div>
+
+                    {dbStatus && !dbStatus.ready && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-start gap-3 rounded-xl px-4 py-3 mb-4"
+                            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}
+                        >
+                            <WifiOff size={16} style={{ color: '#f87171', flexShrink: 0, marginTop: 2 }} />
+                            <div className="flex-1 min-w-0">
+                                <p style={{ color: '#f87171', fontSize: 13, fontWeight: 500, marginBottom: 2 }}>
+                                    Unable to connect to database
+                                </p>
+                                <p style={{ color: 'rgba(248,113,113,0.75)', fontSize: 12, lineHeight: 1.4 }}>
+                                    Please check your internet connection and try again.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleRetryConnection}
+                                disabled={retrying}
+                                className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity"
+                                style={{ color: '#f87171', fontSize: 12, fontWeight: 600 }}
+                            >
+                                <RefreshCw size={13} style={{ animation: retrying ? 'spin 1s linear infinite' : 'none' }} />
+                                {retrying ? 'Retrying…' : 'Retry'}
+                            </button>
+                        </motion.div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                         <div className="flex flex-col gap-2">

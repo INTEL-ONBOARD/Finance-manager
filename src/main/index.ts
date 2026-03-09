@@ -30,6 +30,8 @@ const DB_NAME = 'finwise'
 
 let mongoClient: MongoClient | null = null
 let db: Db | null = null
+let dbReady = false
+let dbError: string | null = null
 const activeStreams = new Map<string, ChangeStream>()
 let presenceStream: ChangeStream | null = null
 
@@ -39,10 +41,13 @@ function col(name: string): Collection {
 }
 
 async function initMongo(): Promise<void> {
+  if (!MONGO_URI) throw new Error('No database URI configured. Please contact support.')
   mongoClient = new MongoClient(MONGO_URI)
   await mongoClient.connect()
   db = mongoClient.db(DB_NAME)
   await db.collection('messages').createIndex({ conversationId: 1, sentAt: -1 })
+  dbReady = true
+  dbError = null
 }
 
 
@@ -65,6 +70,23 @@ function registerIpcHandlers(): void {
     }
   })
   ipcMain.handle('store:delete', (_e, key: string) => store?.delete(key))
+
+  // ── DB status / reconnect ────────────────────────────────────────────────────
+  ipcMain.handle('db:status', () => ({ ready: dbReady, error: dbError }))
+  ipcMain.handle('db:reconnect', async () => {
+    try {
+      if (mongoClient) { try { await mongoClient.close() } catch { /* ignore */ } }
+      mongoClient = null
+      db = null
+      dbReady = false
+      dbError = null
+      await initMongo()
+      return { ok: true }
+    } catch (err) {
+      dbError = err instanceof Error ? err.message : String(err)
+      return { ok: false, error: dbError }
+    }
+  })
 
   // ── App utilities ────────────────────────────────────────────────────────────
   ipcMain.handle('app:version', () => app.getVersion())
@@ -175,6 +197,7 @@ function registerIpcHandlers(): void {
 
   // ── Auth / Users ──────────────────────────────────────────────────────────────
   ipcMain.handle('auth:register', async (_e, name: string, email: string, password: string) => {
+    if (!db) return { ok: false, error: 'Unable to connect to database. Please check your internet connection and try again.' }
     const users = col('users')
     const existing = await users.findOne({ email })
     if (existing) return { ok: false, error: 'Email already registered' }
@@ -190,6 +213,7 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('auth:login', async (_e, email: string, password: string) => {
+    if (!db) return { ok: false, error: 'Unable to connect to database. Please check your internet connection and try again.' }
     const users = col('users')
     const doc = await users.findOne({ email })
     if (!doc) return { ok: false, error: 'Invalid email or password' }
@@ -507,7 +531,9 @@ async function bootstrap(): Promise<void> {
     await initMongo()
   } catch (err) {
     console.error('Failed to initialize app:', err)
-    // Continue without DB — show window so user sees something
+    dbReady = false
+    dbError = err instanceof Error ? err.message : String(err)
+    // Continue without DB — show window so user sees the error banner
   }
   registerIpcHandlers()
   const win = createWindow()

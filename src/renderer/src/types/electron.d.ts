@@ -49,6 +49,8 @@ declare global {
         readFile: (filePath: string) => Promise<string>;
       };
       db: {
+        status: () => Promise<{ ready: boolean; error: string | null }>;
+        reconnect: () => Promise<{ ok: boolean; error?: string }>;
         transactions: {
           getAll: (userId: string) => Promise<Transaction[]>;
           add: (userId: string, doc: Transaction) => Promise<void>;

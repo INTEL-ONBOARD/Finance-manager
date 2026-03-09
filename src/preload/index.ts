@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld('electron', {
 
   // MongoDB-backed collections (all scoped by userId)
   db: {
+    status: (): Promise<{ ready: boolean; error: string | null }> => ipcRenderer.invoke('db:status'),
+    reconnect: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('db:reconnect'),
     transactions: {
       getAll: (userId: string): Promise<unknown[]> => ipcRenderer.invoke('db:transactions:getAll', userId),
       add: (userId: string, doc: unknown): Promise<void> => ipcRenderer.invoke('db:transactions:add', userId, doc),
