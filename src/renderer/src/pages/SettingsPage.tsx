@@ -18,6 +18,18 @@ const sections = [
 ];
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'LKR', 'AUD', 'CAD', 'JPY', 'SGD'];
+
+const _avatarModules = import.meta.glob(
+  '../../public/profile-avatar/monster*.png',
+  { eager: true, query: '?url', import: 'default' }
+);
+const AVATARS: string[] = Object.entries(_avatarModules)
+  .sort(([a], [b]) => {
+    const numA = parseInt(a.match(/_(\d+)\.png$/)?.[1] ?? '0');
+    const numB = parseInt(b.match(/_(\d+)\.png$/)?.[1] ?? '0');
+    return numA - numB;
+  })
+  .map(([, url]) => url as string);
 const TIMEZONES  = ['Asia/Colombo', 'America/New_York', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Australia/Sydney', 'Asia/Tokyo'];
 
 interface Session {
@@ -71,15 +83,6 @@ export default function SettingsPage() {
   }, []);
 
   // Avatar
-  const AVATARS = [
-    '/profile-avatar/monster.png', '/profile-avatar/monster_2.png',
-    '/profile-avatar/monster_3.png', '/profile-avatar/monster_4.png',
-    '/profile-avatar/monster_5.png', '/profile-avatar/monster_6.png',
-    '/profile-avatar/monster_7.png', '/profile-avatar/monster_8.png',
-    '/profile-avatar/monster_9.png', '/profile-avatar/monster_10.png',
-    '/profile-avatar/monster_11.png', '/profile-avatar/monster_12.png',
-    '/profile-avatar/monster_13.png',
-  ];
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [avatarError, setAvatarError] = useState('');
 
