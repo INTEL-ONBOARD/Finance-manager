@@ -113,15 +113,6 @@ contextBridge.exposeInMainWorld('electron', {
     },
   },
 
-  // Window controls (Windows only — custom minimize/maximize/close)
-  windowControls: {
-    minimize:    (): Promise<void>    => ipcRenderer.invoke('window:minimize'),
-    maximize:    (): Promise<void>    => ipcRenderer.invoke('window:maximize'),
-    unmaximize:  (): Promise<void>    => ipcRenderer.invoke('window:unmaximize'),
-    close:       (): Promise<void>    => ipcRenderer.invoke('window:close'),
-    isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window:isMaximized'),
-  },
-
   // Auto-updater
   updater: {
     check:    (): Promise<void> => ipcRenderer.invoke('updater:check'),

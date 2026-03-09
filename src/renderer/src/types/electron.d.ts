@@ -109,13 +109,6 @@ declare global {
         onDownloaded:   (cb: () => void) => () => void;
         onError:        (cb: (msg: string) => void) => () => void;
       };
-      windowControls: {
-        minimize:    () => Promise<void>;
-        maximize:    () => Promise<void>;
-        unmaximize:  () => Promise<void>;
-        close:       () => Promise<void>;
-        isMaximized: () => Promise<boolean>;
-      };
       chat: {
         listUsers:          (selfId: string) => Promise<import('@/types/chat').ChatUser[]>;
         presencePing:       (sessionId: string) => Promise<void>;
