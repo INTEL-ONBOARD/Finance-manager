@@ -123,8 +123,12 @@ export default function Topbar() {
       initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="flex items-center justify-between px-8 py-5 shrink-0"
-      style={{ background: 'transparent', WebkitAppRegion: 'drag' } as React.CSSProperties}
+      className="flex items-center justify-between pl-8 py-5 shrink-0"
+      style={{
+        background: 'transparent',
+        WebkitAppRegion: 'drag',
+        paddingRight: navigator.userAgent.includes('Windows') ? '160px' : '32px',
+      } as React.CSSProperties}
     >
       {/* Breadcrumb */}
       <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>

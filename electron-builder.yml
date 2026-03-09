@@ -26,11 +26,14 @@ mac:
 dmg:
   title: "FinMate ${version}"
   backgroundColor: "#0d1117"
+  window:
+    width: 560
+    height: 400
   contents:
-    - x: 130
-      y: 220
-    - x: 410
-      y: 220
+    - x: 140
+      y: 200
+    - x: 420
+      y: 200
       type: link
       path: /Applications
 

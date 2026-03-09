@@ -4,21 +4,17 @@ import { motion } from 'framer-motion';
 import { Hexagon, Lock, Mail, User, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const AVATARS = [
-    '/profile-avatar/monster.png',
-    '/profile-avatar/monster_2.png',
-    '/profile-avatar/monster_3.png',
-    '/profile-avatar/monster_4.png',
-    '/profile-avatar/monster_5.png',
-    '/profile-avatar/monster_6.png',
-    '/profile-avatar/monster_7.png',
-    '/profile-avatar/monster_8.png',
-    '/profile-avatar/monster_9.png',
-    '/profile-avatar/monster_10.png',
-    '/profile-avatar/monster_11.png',
-    '/profile-avatar/monster_12.png',
-    '/profile-avatar/monster_13.png',
-];
+const _avatarModules = import.meta.glob(
+    '../../public/profile-avatar/monster*.png',
+    { eager: true, query: '?url', import: 'default' }
+);
+const AVATARS: string[] = Object.entries(_avatarModules)
+    .sort(([a], [b]) => {
+        const numA = parseInt(a.match(/_(\d+)\.png$/)?.[1] ?? '0');
+        const numB = parseInt(b.match(/_(\d+)\.png$/)?.[1] ?? '0');
+        return numA - numB;
+    })
+    .map(([, url]) => url as string);
 
 export default function RegisterPage() {
     const navigate = useNavigate();
