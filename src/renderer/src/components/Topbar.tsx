@@ -44,6 +44,58 @@ const iconMap = {
 // Pages that show month-scoped data and benefit from the month picker
 const MONTH_PICKER_ROUTES = ['/', '/budget', '/transactions'];
 
+function WindowControls() {
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  useEffect(() => {
+    window.electron?.windowControls.isMaximized().then(setIsMaximized);
+  }, []);
+
+  return (
+    <div className="flex items-center" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      {/* Minimize */}
+      <button
+        onClick={() => window.electron?.windowControls.minimize()}
+        title="Minimize"
+        style={{ width: 46, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(128,128,128,0.12)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+      >
+        <span style={{ display: 'block', width: 10, height: 1, background: 'currentColor' }} />
+      </button>
+      {/* Maximize / Restore */}
+      <button
+        onClick={() => {
+          if (isMaximized) { window.electron?.windowControls.unmaximize(); setIsMaximized(false); }
+          else { window.electron?.windowControls.maximize(); setIsMaximized(true); }
+        }}
+        title={isMaximized ? 'Restore' : 'Maximize'}
+        style={{ width: 46, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(128,128,128,0.12)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+      >
+        {isMaximized
+          ? <span style={{ position: 'relative', display: 'inline-block', width: 9, height: 9 }}>
+              <span style={{ position: 'absolute', top: 0, left: 0, width: 7, height: 7, border: '1px solid currentColor', background: 'var(--bg-primary)' }} />
+              <span style={{ position: 'absolute', top: 2, left: 2, width: 7, height: 7, border: '1px solid currentColor', background: 'var(--bg-primary)' }} />
+            </span>
+          : <span style={{ display: 'block', width: 9, height: 9, border: '1px solid currentColor' }} />
+        }
+      </button>
+      {/* Close */}
+      <button
+        onClick={() => window.electron?.windowControls.close()}
+        title="Close"
+        style={{ width: 46, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', transition: 'background 0.15s, color 0.15s' }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#e81123'; e.currentTarget.style.color = '#fff'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+      >
+        <span style={{ fontSize: 13, lineHeight: 1, fontFamily: 'sans-serif' }}>✕</span>
+      </button>
+    </div>
+  );
+}
+
 function MonthNavigator() {
   const { selectedMonth, setSelectedMonth } = useFinance();
   const [y, m] = selectedMonth.split('-').map(Number);
@@ -123,12 +175,8 @@ export default function Topbar() {
       initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="flex items-center justify-between pl-8 py-5 shrink-0"
-      style={{
-        background: 'transparent',
-        WebkitAppRegion: 'drag',
-        paddingRight: navigator.userAgent.includes('Windows') ? '160px' : '32px',
-      } as React.CSSProperties}
+      className="flex items-center justify-between px-8 py-5 shrink-0"
+      style={{ background: 'transparent', WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
       {/* Breadcrumb */}
       <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
@@ -316,6 +364,9 @@ export default function Topbar() {
             </div>
         </div>
       </div>
+
+      {/* Custom window controls — Windows only */}
+      {window.electron?.platform === 'win32' && <WindowControls />}
     </motion.header>
   );
 }

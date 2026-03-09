@@ -944,9 +944,10 @@ export default function SettingsPage() {
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>
                         What's new in v{updateInfo.version}
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                        {String(updateInfo.releaseNotes)}
-                      </div>
+                      <div
+                        style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7 }}
+                        dangerouslySetInnerHTML={{ __html: String(updateInfo.releaseNotes) }}
+                      />
                     </div>
                   )}
 
