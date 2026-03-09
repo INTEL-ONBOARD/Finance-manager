@@ -52,19 +52,15 @@ function registerIpcHandlers(): void {
   ipcMain.handle('store:get', (_e, key: string) => store?.get(key) ?? null)
   ipcMain.handle('store:set', (_e, key: string, value: unknown) => {
     store?.set(key, value)
-    if (process.platform === 'win32' && key === 'finmate-theme') {
-      const win = BrowserWindow.getAllWindows()[0]
-      if (win) {
-        const light = value === 'light'
-        win.setTitleBarOverlay({
-          color: light ? '#f0f4f8' : '#0d1117',
-          symbolColor: light ? '#0f172a' : '#ffffff',
-          height: 32,
-        })
-      }
-    }
   })
   ipcMain.handle('store:delete', (_e, key: string) => store?.delete(key))
+
+  // ── Window controls ──────────────────────────────────────────────────────────
+  ipcMain.handle('window:minimize',    () => BrowserWindow.getAllWindows()[0]?.minimize())
+  ipcMain.handle('window:maximize',    () => BrowserWindow.getAllWindows()[0]?.maximize())
+  ipcMain.handle('window:unmaximize',  () => BrowserWindow.getAllWindows()[0]?.unmaximize())
+  ipcMain.handle('window:close',       () => BrowserWindow.getAllWindows()[0]?.close())
+  ipcMain.handle('window:isMaximized', () => BrowserWindow.getAllWindows()[0]?.isMaximized() ?? false)
 
   // ── App utilities ────────────────────────────────────────────────────────────
   ipcMain.handle('app:version', () => app.getVersion())
@@ -398,22 +394,13 @@ function createWindow(): BrowserWindow {
   const savedTheme = store?.get('finmate-theme') as string | undefined
   const bgColor = savedTheme === 'light' ? '#f0f4f8' : '#0d1117'
 
-  const isLight = bgColor === '#f0f4f8'
-
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 960,
     minHeight: 600,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
-    ...(process.platform === 'win32' ? {
-      titleBarOverlay: {
-        color: bgColor,
-        symbolColor: isLight ? '#0f172a' : '#ffffff',
-        height: 32,
-      },
-      autoHideMenuBar: true,
-    } : {}),
+    ...(process.platform === 'win32' ? { autoHideMenuBar: true } : {}),
     backgroundColor: bgColor,
     show: false,
     ...(process.platform !== 'darwin' ? { icon: getIconPath() } : {}),
