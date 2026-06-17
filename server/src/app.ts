@@ -12,6 +12,7 @@ import { resourceRoutes } from './routes/resource.routes'
 import { settingsRoutes } from './routes/settings.routes'
 import { sessionsRoutes } from './routes/sessions.routes'
 import { chatRoutes } from './routes/chat.routes'
+import { userRoutes } from './routes/user.routes'
 
 export async function buildApp() {
   // Fastify v5: a pre-built logger instance must be passed as `loggerInstance`
@@ -39,6 +40,7 @@ export async function buildApp() {
     await secured.register(settingsRoutes)
     await secured.register(sessionsRoutes)
     await secured.register(chatRoutes)
+    await secured.register(userRoutes)
   })
 
   return app

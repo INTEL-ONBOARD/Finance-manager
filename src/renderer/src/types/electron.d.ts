@@ -29,7 +29,7 @@ interface Session {
 declare global {
   interface Window {
     electron?: {
-      platform: 'darwin' | 'win32' | 'linux';
+      platform: 'darwin' | 'win32' | 'linux' | 'web';
       getVersion: () => Promise<string>;
       openExternal: (url: string) => Promise<void>;
       auth: {
@@ -121,6 +121,10 @@ declare global {
         unwatchConversation:(conversationId: string) => Promise<void>;
         onMessage:          (cb: (payload: { conversationId: string; message: import('@/types/chat').ChatMessage }) => void) => () => void;
         onPresenceUpdate:   (cb: (payload: { userId: string; lastActiveAt: string }) => void) => () => void;
+      };
+      // Web-only: cross-device live sync pushed from the backend over the socket.
+      realtime?: {
+        onResourceChange: (cb: (e: { resource: string; action: 'created' | 'updated' | 'deleted'; payload: unknown }) => void) => () => void;
       };
     };
   }

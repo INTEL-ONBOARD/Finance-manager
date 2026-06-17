@@ -14,7 +14,9 @@
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:win": "npm run build && electron-builder --win",
     "dist:mac:x64": "npm run build && electron-builder --mac --x64",
-    "dist:mac:arm64": "npm run build && electron-builder --mac --arm64"
+    "dist:mac:arm64": "npm run build && electron-builder --mac --arm64",
+    "build:web": "vite build --config vite.config.web.mts",
+    "dev:web": "vite --config vite.config.web.mts --host"
   },
   "dependencies": {
     "electron-store": "^10.1.0",
@@ -26,6 +28,7 @@
     "react-dom": "19.2.3",
     "react-router-dom": "^7.13.1",
     "recharts": "^3.7.0",
+    "socket.io-client": "^4.8.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -42,6 +45,7 @@
     "eslint": "^9",
     "tailwindcss": "^4",
     "typescript": "^5.9.3",
+    "vite": "^6.0.0",
     "vite-tsconfig-paths": "^5.1.4"
   }
 }

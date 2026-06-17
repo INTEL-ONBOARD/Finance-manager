@@ -4,6 +4,11 @@ import { FinanceProvider } from './context/FinanceContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import App from './App'
 import './globals.css'
+import { installWebShim } from './web/installShim'
+
+// When not running inside Electron (i.e. the web build), install a
+// window.electron backed by the realtime backend so the app runs unchanged.
+installWebShim()
 
 const SplashScreen = React.lazy(() => import('./components/SplashScreen'))
 
