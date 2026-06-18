@@ -15,7 +15,7 @@ export const config = {
   dbName: process.env.DB_NAME ?? 'finwise',
 
   jwtSecret: required('JWT_SECRET'),
-  accessTtl: process.env.ACCESS_TTL ?? '15m',
+  accessTtl: process.env.ACCESS_TTL ?? '30d',
   refreshTtl: process.env.REFRESH_TTL ?? '30d',
   cookieName: process.env.COOKIE_NAME ?? 'fw_token',
   cookieSecure: (process.env.COOKIE_SECURE ?? 'true') === 'true',
