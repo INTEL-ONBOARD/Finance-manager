@@ -1,0 +1,29 @@
+name: finwise
+
+# Use this compose on a server that ALREADY has a reverse proxy on 80/443
+# (e.g. the existing host Caddy on this VPS). It does NOT bind 80/443; the API
+# is exposed only on localhost and the host proxy forwards to it.
+
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+    ports:
+      # localhost-only — the host Caddy reverse_proxy targets this port
+      - "127.0.0.1:${API_PORT:-4200}:8080"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    # no host port — private to this compose network, won't clash with other redis
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:

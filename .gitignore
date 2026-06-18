@@ -6,6 +6,7 @@ node_modules/
 # electron-vite build output
 out/
 dist/
+dist-web/
 
 # misc
 .DS_Store

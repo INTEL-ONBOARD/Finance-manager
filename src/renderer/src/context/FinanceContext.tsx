@@ -262,6 +262,42 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
     });
   }, [userId]);
 
+  // Cross-device live sync: apply realtime pushes from the backend to local
+  // state. Only present on the web build; a no-op inside Electron.
+  useEffect(() => {
+    const rt = window.electron?.realtime;
+    if (!userId || !rt?.onResourceChange) return;
+    const unsub = rt.onResourceChange(({ resource, action, payload }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const apply = (setter: (fn: (prev: any[]) => any[]) => void) => {
+        if (action === 'created') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const doc = payload as any;
+          if (doc?.id) setter(prev => prev.some(x => x.id === doc.id) ? prev : [doc, ...prev]);
+        } else if (action === 'updated') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { id, updates } = payload as any;
+          setter(prev => prev.map(x => x.id === id ? { ...x, ...updates } : x));
+        } else if (action === 'deleted') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { id } = payload as any;
+          setter(prev => prev.filter(x => x.id !== id));
+        }
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (resource === 'transactions') apply(setTransactions as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      else if (resource === 'goals') apply(setGoals as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      else if (resource === 'bills') apply(setBills as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      else if (resource === 'accounts') apply(setAccounts as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      else if (resource === 'notifications') apply(setNotifications as any);
+    });
+    return unsub;
+  }, [userId]);
+
   // ── Derived values ─────────────────────────────────────────────────────────
   const monthTxns = transactions.filter(t => t.date.startsWith(selectedMonth));
 

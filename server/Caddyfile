@@ -1,0 +1,6 @@
+# Caddy reverse-proxies both REST and the WebSocket upgrade to the API.
+# If SITE_ADDRESS is a domain, Caddy provisions and renews TLS automatically.
+{$SITE_ADDRESS} {
+	encode gzip
+	reverse_proxy api:8080
+}
