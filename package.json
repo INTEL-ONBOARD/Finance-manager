@@ -16,7 +16,9 @@
     "dist:mac:x64": "npm run build && electron-builder --mac --x64",
     "dist:mac:arm64": "npm run build && electron-builder --mac --arm64",
     "build:web": "vite build --config vite.config.web.mts",
-    "dev:web": "vite --config vite.config.web.mts --host"
+    "dev:web": "vite --config vite.config.web.mts --host",
+    "dev:desktop:backend": "cross-env VITE_USE_BACKEND=true VITE_API_BASE=https://84-247-139-75.sslip.io/finwise ELECTRON_RUN_AS_NODE= electron-vite dev",
+    "build:desktop:backend": "cross-env VITE_USE_BACKEND=true VITE_API_BASE=https://84-247-139-75.sslip.io/finwise ELECTRON_RUN_AS_NODE= electron-vite build"
   },
   "dependencies": {
     "electron-store": "^10.1.0",

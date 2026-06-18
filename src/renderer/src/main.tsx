@@ -5,10 +5,18 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import App from './App'
 import './globals.css'
 import { installWebShim } from './web/installShim'
+import { installDesktopBackendBridge } from './web/installDesktopBridge'
 
-// When not running inside Electron (i.e. the web build), install a
-// window.electron backed by the realtime backend so the app runs unchanged.
-installWebShim()
+// Web build (no Electron): full window.electron shim backed by the backend.
+// Desktop built with VITE_USE_BACKEND=true: route data/auth/chat to the backend
+// while keeping native features. Plain desktop build: unchanged.
+const useBackend =
+  (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_USE_BACKEND === 'true'
+if (!window.electron) {
+  installWebShim()
+} else if (useBackend) {
+  installDesktopBackendBridge()
+}
 
 const SplashScreen = React.lazy(() => import('./components/SplashScreen'))
 
