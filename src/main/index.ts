@@ -541,25 +541,38 @@ async function bootstrap(): Promise<void> {
   setupUpdaterEvents(win)
   registerChatStreamHandlers(win)
 
-  if (!isDev) {
-    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          'Content-Security-Policy': [
-            [
-              "default-src 'self' file:",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
-              "font-src 'self' data:",
-              "img-src 'self' data: blob:",
-              "connect-src 'self' https://*.mongodb.net wss://*.mongodb.net https://github.com https://objects.githubusercontent.com https://github-releases.githubusercontent.com",
-            ].join('; '),
-          ],
-        },
-      })
-    })
+  // Host of the realtime backend (used only by desktop "backend mode" builds).
+  const BACKEND_HOST = '84-247-139-75.sslip.io'
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders }
+    // Let the file:// renderer read responses from the backend host. The app is a
+    // trusted first-party client and the bearer token is the real gate. This is a
+    // no-op for every other host, so default (non-backend) builds are unaffected.
+    try {
+      if (new URL(details.url).host === BACKEND_HOST) {
+        responseHeaders['Access-Control-Allow-Origin'] = ['*']
+        responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, PATCH, DELETE, OPTIONS']
+        responseHeaders['Access-Control-Allow-Headers'] = ['Content-Type, Authorization']
+      }
+    } catch {
+      // details.url not parseable — leave headers untouched
+    }
+    if (!isDev) {
+      responseHeaders['Content-Security-Policy'] = [
+        [
+          "default-src 'self' file:",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+          "style-src 'self' 'unsafe-inline'",
+          "font-src 'self' data:",
+          "img-src 'self' data: blob:",
+          `connect-src 'self' https://*.mongodb.net wss://*.mongodb.net https://${BACKEND_HOST} wss://${BACKEND_HOST} https://github.com https://objects.githubusercontent.com https://github-releases.githubusercontent.com`,
+        ].join('; '),
+      ]
+    }
+    callback({ responseHeaders })
+  })
 
+  if (!isDev) {
     setTimeout(() => autoUpdater.checkForUpdates(), 3000)
   }
 

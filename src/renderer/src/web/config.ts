@@ -4,6 +4,15 @@
 export const API_BASE: string =
   ((import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE) ?? '/finwise'
 
+// Desktop backend mode (VITE_USE_BACKEND=true) reaches the backend cross-origin
+// from a file:// renderer, so it authenticates with the bearer token only (no
+// cookies) and the Electron main process injects the CORS response headers. The
+// web build stays same-origin and cookie-based.
+export const IS_DESKTOP_BACKEND: boolean =
+  ((import.meta as unknown as { env?: Record<string, string> }).env?.VITE_USE_BACKEND) === 'true'
+
+export const CREDENTIALS: RequestCredentials = IS_DESKTOP_BACKEND ? 'omit' : 'include'
+
 const TOKEN_KEY = 'finwise-access-token'
 
 export function getToken(): string | null {

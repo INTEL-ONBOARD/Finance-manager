@@ -1,4 +1,4 @@
-import { API_BASE, getToken } from './config'
+import { API_BASE, getToken, CREDENTIALS } from './config'
 
 export interface ApiError {
   status: number
@@ -9,7 +9,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const token = getToken()
   const res = await fetch(`${API_BASE}${path}`, {
     method,
-    credentials: 'include', // send/receive the httpOnly auth cookie (same-origin)
+    credentials: CREDENTIALS, // web: cookie (same-origin). desktop: omit (bearer only)
     headers: {
       ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
