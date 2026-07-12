@@ -4,6 +4,7 @@ import * as auth from '../auth/service'
 import { authGuard } from '../middleware/authGuard'
 import { signAccess, verifyToken } from '../auth/tokens'
 import { config } from '../config'
+import { checkRateLimit } from '../rateLimit'
 
 const credsSchema = z.object({ email: z.string().email(), password: z.string().min(1) })
 const registerSchema = credsSchema.extend({ name: z.string().min(1) })
@@ -22,7 +23,6 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/auth/register', async (req, reply) => {
     const body = registerSchema.parse(req.body)
     const res = await auth.register(body.name, body.email, body.password, req.headers['user-agent'])
-    setAuthCookie(reply, res.accessToken)
     reply.code(201)
     return res
   })
@@ -63,6 +63,33 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/auth/change-password', { preHandler: authGuard }, async (req) => {
     const body = z.object({ oldPassword: z.string().min(1), newPassword: z.string().min(6) }).parse(req.body)
     await auth.changePassword(req.userId, body.oldPassword, body.newPassword)
+    return { ok: true }
+  })
+
+  app.post('/api/auth/verify', async (req, reply) => {
+    const body = z.object({ token: z.string().min(1) }).parse(req.body)
+    const res = await auth.verifyEmail(body.token, req.headers['user-agent'])
+    setAuthCookie(reply, res.accessToken)
+    return res
+  })
+
+  app.post('/api/auth/resend-verification', async (req) => {
+    const body = z.object({ email: z.string().email() }).parse(req.body)
+    const allowed = await checkRateLimit(`resend:${body.email}`, 3, 3600)
+    if (allowed) await auth.resendVerification(body.email)
+    return { ok: true }
+  })
+
+  app.post('/api/auth/forgot-password', async (req) => {
+    const body = z.object({ email: z.string().email() }).parse(req.body)
+    const allowed = await checkRateLimit(`forgot:${body.email}`, 3, 3600)
+    if (allowed) await auth.requestPasswordReset(body.email)
+    return { ok: true }
+  })
+
+  app.post('/api/auth/reset-password', async (req) => {
+    const body = z.object({ token: z.string().min(1), newPassword: z.string().min(6) }).parse(req.body)
+    await auth.resetPassword(body.token, body.newPassword)
     return { ok: true }
   })
 }
