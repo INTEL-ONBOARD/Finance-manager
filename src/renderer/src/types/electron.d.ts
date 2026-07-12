@@ -33,13 +33,14 @@ declare global {
       getVersion: () => Promise<string>;
       openExternal: (url: string) => Promise<void>;
       auth: {
-        register: (name: string, email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string; avatar?: string | null }; sessionId?: string; error?: string }>;
+        register: (name: string, email: string, password: string) => Promise<{ ok: boolean; pending?: boolean; user?: { id: string; name: string; email: string; avatar?: string | null }; sessionId?: string; error?: string }>;
         login: (email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string; avatar?: string | null }; sessionId?: string; error?: string }>;
         userExists: (email: string) => Promise<boolean>;
         changePassword: (userId: string, oldPassword: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
         verifyEmail: (token: string) => Promise<{ ok: boolean; error?: string }>;
         forgotPassword: (email: string) => Promise<{ ok: boolean; error?: string }>;
         resetPassword: (token: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
+        resendVerification: (email: string) => Promise<{ ok: boolean; error?: string }>;
       };
       store: {
         get: (key: string) => Promise<unknown>;
@@ -86,6 +87,7 @@ declare global {
           add: (userId: string, doc: Notification) => Promise<void>;
         };
         clearUserData: (userId: string) => Promise<void>;
+        setMonthlyOptIn: (optIn: boolean) => Promise<void>;
         settings: {
           get: (userId: string) => Promise<UserSettings | null>;
           save: (userId: string, settings: UserSettings) => Promise<void>;

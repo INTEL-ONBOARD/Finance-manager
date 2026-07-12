@@ -12,6 +12,8 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [resendLoading, setResendLoading] = useState(false);
+    const [resendDone, setResendDone] = useState(false);
     const [dbStatus, setDbStatus] = useState<{ ready: boolean; error: string | null } | null>(null);
     const [retrying, setRetrying] = useState(false);
 
@@ -51,6 +53,7 @@ export default function LoginPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setResendDone(false);
         setLoading(true);
         try {
             await login(email, password);
@@ -59,6 +62,17 @@ export default function LoginPage() {
             setError(err instanceof Error ? err.message : 'Login failed');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleResendVerification = async () => {
+        setResendLoading(true);
+        setResendDone(false);
+        try {
+            await window.electron!.auth.resendVerification(email);
+            setResendDone(true);
+        } finally {
+            setResendLoading(false);
         }
     };
 
@@ -266,7 +280,7 @@ export default function LoginPage() {
                                 <label style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 500 }}>
                                     Password
                                 </label>
-                                <button type="button" style={{ color: 'var(--accent-brand)', fontSize: 13, fontWeight: 500 }}>
+                                <button type="button" onClick={() => navigate('/forgot')} style={{ color: 'var(--accent-brand)', fontSize: 13, fontWeight: 500 }}>
                                     Forgot password?
                                 </button>
                             </div>
@@ -291,7 +305,26 @@ export default function LoginPage() {
                         </div>
 
                         {error && (
-                            <p style={{ color: '#f87171', fontSize: 13, textAlign: 'center', marginTop: -4 }}>{error}</p>
+                            <div style={{ marginTop: -4 }}>
+                                <p style={{ color: '#f87171', fontSize: 13, textAlign: 'center' }}>{error}</p>
+                                {/verify/i.test(error) && (
+                                    <div className="flex items-center justify-center gap-2 mt-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleResendVerification}
+                                            disabled={resendLoading || resendDone}
+                                            className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
+                                            style={{
+                                                color: resendDone ? '#84cc16' : 'var(--accent-brand)',
+                                                fontSize: 13, fontWeight: 500,
+                                                opacity: resendLoading ? 0.7 : 1,
+                                            }}
+                                        >
+                                            {resendDone ? 'Verification email sent!' : resendLoading ? 'Sending…' : 'Resend verification email'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         )}
 
                         <motion.button

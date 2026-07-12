@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Hexagon, Lock, Mail, User, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
+import { Hexagon, Lock, Mail, User, ArrowRight, WifiOff, RefreshCw, MailCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const _avatarModules = import.meta.glob(
@@ -18,7 +18,7 @@ const AVATARS: string[] = Object.entries(_avatarModules)
 
 export default function RegisterPage() {
     const navigate = useNavigate();
-    const { register } = useAuth();
+    useAuth(); // keep provider mounted; auth state hydrated from localStorage on reload
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -26,6 +26,9 @@ export default function RegisterPage() {
     const [selectedAvatar, setSelectedAvatar] = useState<string>(AVATARS[0]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [pending, setPending] = useState(false);
+    const [resendLoading, setResendLoading] = useState(false);
+    const [resendDone, setResendDone] = useState(false);
     const [dbStatus, setDbStatus] = useState<{ ready: boolean; error: string | null } | null>(null);
     const [retrying, setRetrying] = useState(false);
 
@@ -50,13 +53,38 @@ export default function RegisterPage() {
         setError('');
         setLoading(true);
         try {
-            await register(name, email, password, selectedAvatar);
+            const result = await window.electron!.auth.register(name, email, password);
+            if (!result.ok) throw new Error(result.error ?? 'Registration failed');
+            if (result.pending) {
+                setPending(true);
+                return;
+            }
+            // Not pending — user is fully created; hydrate auth state and continue
+            if (result.user) {
+                const u = { ...result.user, sessionId: result.sessionId, ...(selectedAvatar ? { avatar: selectedAvatar } : {}) };
+                localStorage.setItem('finmate-auth-user', JSON.stringify(u));
+                if (selectedAvatar && u.id) {
+                    window.electron?.db.settings.save(u.id, { avatar: selectedAvatar }).catch(() => {});
+                }
+            }
             localStorage.setItem('finwise-onboarded', 'false');
-            navigate('/onboarding');
+            // Force a re-mount so AuthProvider re-reads localStorage
+            window.location.replace('/#/onboarding');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Registration failed');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        setResendLoading(true);
+        setResendDone(false);
+        try {
+            await window.electron!.auth.resendVerification(email);
+            setResendDone(true);
+        } finally {
+            setResendLoading(false);
         }
     };
 
@@ -161,7 +189,52 @@ export default function RegisterPage() {
                         </motion.div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                    {pending && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex flex-col items-center gap-5 py-6 text-center"
+                        >
+                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                                style={{ background: 'rgba(132,204,22,0.1)', border: '1px solid rgba(132,204,22,0.25)' }}>
+                                <MailCheck size={32} style={{ color: '#84cc16' }} />
+                            </div>
+                            <div>
+                                <p style={{ color: 'var(--text-primary)', fontSize: 18, fontWeight: 700, marginBottom: 6 }}>
+                                    Check your email
+                                </p>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.5 }}>
+                                    We sent a verification link to <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>.
+                                    Click the link to activate your account.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleResend}
+                                disabled={resendLoading || resendDone}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                                style={{
+                                    background: resendDone ? 'rgba(132,204,22,0.1)' : 'var(--bg-secondary)',
+                                    border: `1px solid ${resendDone ? 'rgba(132,204,22,0.3)' : 'var(--border-subtle)'}`,
+                                    color: resendDone ? '#84cc16' : 'var(--text-secondary)',
+                                    opacity: resendLoading ? 0.7 : 1,
+                                }}
+                            >
+                                <RefreshCw size={14} style={{ animation: resendLoading ? 'spin 1s linear infinite' : 'none' }} />
+                                {resendDone ? 'Email sent!' : resendLoading ? 'Sending…' : 'Resend email'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/login')}
+                                style={{ color: 'var(--accent-brand)', fontSize: 13, fontWeight: 500 }}
+                                className="hover:underline"
+                            >
+                                Back to log in
+                            </button>
+                        </motion.div>
+                    )}
+
+                    {!pending && <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
                         {/* Avatar Picker */}
                         <div className="flex flex-col gap-2">
@@ -295,18 +368,20 @@ export default function RegisterPage() {
                                 </>
                             )}
                         </motion.button>
-                    </form>
+                    </form>}
 
-                    <p className="mt-8 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        Already have an account?{' '}
-                        <button
-                            onClick={() => navigate('/login')}
-                            style={{ color: 'var(--accent-brand)', fontWeight: 500 }}
-                            className="hover:underline"
-                        >
-                            Log in
-                        </button>
-                    </p>
+                    {!pending && (
+                        <p className="mt-8 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
+                            Already have an account?{' '}
+                            <button
+                                onClick={() => navigate('/login')}
+                                style={{ color: 'var(--accent-brand)', fontWeight: 500 }}
+                                className="hover:underline"
+                            >
+                                Log in
+                            </button>
+                        </p>
+                    )}
                 </motion.div>
             </div>
         </div>

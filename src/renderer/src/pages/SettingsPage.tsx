@@ -6,7 +6,7 @@ import {
   User, Bell, Shield, CreditCard, Crown, Check, ChevronRight,
   Camera, Lock, Smartphone, Trash2, Zap, BarChart3, Target, Receipt,
   RefreshCw, Download, CheckCircle, AlertCircle, ArrowUpCircle,
-  Monitor, Eye, EyeOff, Clock,
+  Monitor, Eye, EyeOff, Clock, Mail,
 } from 'lucide-react';
 const sections = [
   { id: 'profile',       label: 'Profile',       icon: User },
@@ -75,6 +75,7 @@ export default function SettingsPage() {
     systemNotifications: true, billReminders: true, goalProgress: true,
     largeTransactions: true, monthlyReport: true, weeklyDigest: false,
   });
+  const [monthlyOptIn, setMonthlyOptIn] = useState(true);
   const notifSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cleanup notifSaveTimer on unmount
@@ -509,7 +510,7 @@ export default function SettingsPage() {
                         initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
                         className="flex items-center justify-between py-4"
-                        style={{ borderBottom: i < 5 ? '1px solid var(--border)' : 'none' }}>
+                        style={{ borderBottom: '1px solid var(--border)' }}>
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                             style={{ background: on ? 'var(--accent-brand-dim)' : 'var(--bg-card)', border: `1px solid ${on ? 'rgba(74,222,128,0.25)' : 'var(--border)'}` }}>
@@ -532,6 +533,37 @@ export default function SettingsPage() {
                       </motion.div>
                     );
                   })}
+
+                  {/* Monthly summary emails — server-side opt-in */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 6 * 0.05 }}
+                    className="flex items-center justify-between py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: monthlyOptIn ? 'var(--accent-brand-dim)' : 'var(--bg-card)', border: `1px solid ${monthlyOptIn ? 'rgba(74,222,128,0.25)' : 'var(--border)'}` }}>
+                        <Mail size={14} style={{ color: monthlyOptIn ? 'var(--accent-brand)' : 'var(--text-muted)' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>Monthly summary emails</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>Receive a monthly finance summary to your inbox</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const next = !monthlyOptIn;
+                        setMonthlyOptIn(next);
+                        window.electron?.db.setMonthlyOptIn(next).catch(() => {});
+                      }}
+                      className="relative shrink-0 transition-all duration-200"
+                      style={{ width: 40, height: 22, borderRadius: 11, background: monthlyOptIn ? 'var(--accent-brand)' : 'var(--bg-card-hover)', border: '1px solid var(--border-light)' }}>
+                      <motion.div
+                        animate={{ x: monthlyOptIn ? 20 : 2 }}
+                        transition={{ duration: 0.15, ease: 'easeInOut' }}
+                        className="absolute top-0.5 w-4 h-4 rounded-full"
+                        style={{ background: monthlyOptIn ? '#0d1117' : 'var(--text-muted)' }} />
+                    </button>
+                  </motion.div>
                 </div>
               </motion.div>
             )}
