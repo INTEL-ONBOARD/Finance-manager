@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Hexagon, CheckCircle, XCircle, Loader } from 'lucide-react'
 
@@ -7,9 +7,11 @@ export default function VerifyPage(): JSX.Element {
   const [msg, setMsg] = useState('Verifying your email…')
   const [status, setStatus] = useState<'pending' | 'success' | 'error'>('pending')
   const navigate = useNavigate()
+  // Hash router keeps the token in the route query, not window.location.search.
+  const [searchParams] = useSearchParams()
 
   useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get('token') ?? ''
+    const token = searchParams.get('token') ?? ''
     if (!token) {
       setMsg('Missing verification token.')
       setStatus('error')
@@ -28,7 +30,7 @@ export default function VerifyPage(): JSX.Element {
       setMsg('Verification failed. The link may have expired.')
       setStatus('error')
     })
-  }, [navigate])
+  }, [navigate, searchParams])
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center" style={{ background: 'var(--bg-primary)' }}>

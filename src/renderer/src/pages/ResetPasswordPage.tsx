@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Hexagon, Lock, ArrowRight } from 'lucide-react'
 
@@ -8,12 +8,14 @@ export default function ResetPasswordPage(): JSX.Element {
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  // Hash router keeps the token in the route query, not window.location.search.
+  const [searchParams] = useSearchParams()
 
   const submit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     setErr('')
     setLoading(true)
-    const token = new URLSearchParams(window.location.search).get('token') ?? ''
+    const token = searchParams.get('token') ?? ''
     const r = await window.electron?.auth.resetPassword(token, pw)
     if (r?.ok) {
       navigate('/login')
