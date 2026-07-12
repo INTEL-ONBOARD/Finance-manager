@@ -19,9 +19,16 @@ export default function VerifyPage(): JSX.Element {
     }
     window.electron?.auth.verifyEmail(token)?.then((r) => {
       if (r.ok) {
+        // verifyEmail already stored the access token; persist the user the same
+        // way AuthContext.login does so AuthProvider hydrates as authenticated,
+        // then force a remount (hash replace) so it re-reads localStorage.
+        if (r.user) {
+          localStorage.setItem('finmate-auth-user', JSON.stringify({ ...r.user, sessionId: r.sessionId }))
+        }
+        localStorage.setItem('finwise-onboarded', 'false')
         setMsg('Email verified! Redirecting to your account…')
         setStatus('success')
-        setTimeout(() => navigate('/'), 1200)
+        setTimeout(() => window.location.replace('/#/onboarding'), 1200)
       } else {
         setMsg(r.error || 'Verification failed. The link may have expired.')
         setStatus('error')

@@ -37,7 +37,7 @@ declare global {
         login: (email: string, password: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string; avatar?: string | null }; sessionId?: string; error?: string }>;
         userExists: (email: string) => Promise<boolean>;
         changePassword: (userId: string, oldPassword: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
-        verifyEmail: (token: string) => Promise<{ ok: boolean; error?: string }>;
+        verifyEmail: (token: string) => Promise<{ ok: boolean; user?: { id: string; name: string; email: string; avatar?: string | null }; sessionId?: string; error?: string }>;
         forgotPassword: (email: string) => Promise<{ ok: boolean; error?: string }>;
         resetPassword: (token: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
         resendVerification: (email: string) => Promise<{ ok: boolean; error?: string }>;
