@@ -21,6 +21,10 @@ export const config = {
   cookieSecure: (process.env.COOKIE_SECURE ?? 'true') === 'true',
 
   redisUrl: process.env.REDIS_URL ?? '',
+  appWebUrl: process.env.APP_WEB_URL ?? 'http://localhost:5173/finwise-app',
+  emailFrom: process.env.EMAIL_FROM ?? 'Finwise <no-reply@example.com>',
+  resendApiKey: process.env.RESEND_API_KEY ?? '',
+  monthlyCron: process.env.MONTHLY_CRON ?? '0 8 1 * *',
   corsOrigins:
     (process.env.CORS_ORIGINS ?? '*') === '*'
       ? true
