@@ -15,7 +15,7 @@ export default function VerifyPage(): JSX.Element {
       setStatus('error')
       return
     }
-    window.electron?.auth.verifyEmail(token).then((r) => {
+    window.electron?.auth.verifyEmail(token)?.then((r) => {
       if (r.ok) {
         setMsg('Email verified! Redirecting to your account…')
         setStatus('success')
@@ -24,6 +24,9 @@ export default function VerifyPage(): JSX.Element {
         setMsg(r.error || 'Verification failed. The link may have expired.')
         setStatus('error')
       }
+    }).catch(() => {
+      setMsg('Verification failed. The link may have expired.')
+      setStatus('error')
     })
   }, [navigate])
 
