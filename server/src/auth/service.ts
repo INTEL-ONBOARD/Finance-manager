@@ -4,6 +4,7 @@ import { HttpError } from '../errors'
 import { hashPassword, verifyPassword } from './password'
 import { signAccess, signRefresh } from './tokens'
 import { config } from '../config'
+import { logger } from '../logger'
 import { createEmailToken, consumeEmailToken } from '../email/tokens'
 import { sendVerification, sendPasswordReset } from '../email/send'
 
@@ -63,8 +64,17 @@ export async function register(
   // Store the chosen avatar now so it survives the verify-before-login flow
   // (login and verifyEmail return it on the user object).
   await users.insertOne({ id, name, email, salt, hash, avatar: avatar ?? null, emailVerified: false, monthlyOptIn: true, unsubToken })
-  const raw = await createEmailToken('verify', id, email)
-  await sendVerification({ name, email }, `${config.appWebUrl}/verify?token=${raw}`)
+  try {
+    const raw = await createEmailToken('verify', id, email)
+    await sendVerification({ name, email }, `${config.appWebUrl}/verify?token=${raw}`)
+  } catch (err) {
+    // The verification email is essential (login is gated on it). If it can't
+    // be sent, roll back so we don't leave an unverifiable orphan account, and
+    // surface a clear, retryable error instead of a generic 500.
+    await users.deleteOne({ id })
+    logger.error({ err, email }, 'verification email failed at register; rolled back user')
+    throw new HttpError(502, 'Could not send the verification email. Please try again shortly.')
+  }
   return { status: 'verification_sent' }
 }
 
@@ -112,15 +122,26 @@ export async function verifyEmail(rawToken: string, ua?: string): Promise<AuthRe
 export async function resendVerification(email: string): Promise<void> {
   const doc = await col('users').findOne({ email })
   if (!doc || doc.emailVerified) return
-  const raw = await createEmailToken('verify', doc.id as string, email)
-  await sendVerification({ name: doc.name as string, email }, `${config.appWebUrl}/verify?token=${raw}`)
+  // Swallow send failures: this endpoint always reports success (no email
+  // enumeration) and a transient email outage must not surface as a 500.
+  try {
+    const raw = await createEmailToken('verify', doc.id as string, email)
+    await sendVerification({ name: doc.name as string, email }, `${config.appWebUrl}/verify?token=${raw}`)
+  } catch (err) {
+    logger.error({ err, email }, 'resend verification email failed')
+  }
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
   const doc = await col('users').findOne({ email })
   if (!doc || doc.emailVerified === false) return
-  const raw = await createEmailToken('reset', doc.id as string, email)
-  await sendPasswordReset({ name: doc.name as string, email }, `${config.appWebUrl}/reset?token=${raw}`)
+  // Swallow send failures for the same reasons as resendVerification.
+  try {
+    const raw = await createEmailToken('reset', doc.id as string, email)
+    await sendPasswordReset({ name: doc.name as string, email }, `${config.appWebUrl}/reset?token=${raw}`)
+  } catch (err) {
+    logger.error({ err, email }, 'password reset email failed')
+  }
 }
 
 export async function resetPassword(rawToken: string, newPassword: string): Promise<void> {
