@@ -26,6 +26,8 @@ export async function connectDb(): Promise<Db> {
     db.collection('users').createIndex({ email: 1 }),
     db.collection('users').createIndex({ id: 1 }),
     db.collection('messages').createIndex({ conversationId: 1, sentAt: -1 }),
+    db.collection('emailTokens').createIndex({ tokenHash: 1 }),
+    db.collection('emailTokens').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
   ]).catch((err) => logger.warn({ err }, 'index creation skipped'))
 
   logger.info('MongoDB connected')
