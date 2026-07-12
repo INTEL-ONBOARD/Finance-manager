@@ -27,6 +27,7 @@ describe('register + verify + login', () => {
 
   it('login blocked until verified, then allowed', async () => {
     await auth.register('Jithmi', 'j@x.com', 'secret1')
+    await expect(auth.login('j@x.com', 'wrongpass')).rejects.toMatchObject({ status: 401 })
     await expect(auth.login('j@x.com', 'secret1')).rejects.toMatchObject({ status: 403 })
     const authed = await auth.verifyEmail(tokenFromLastEmail())
     expect(authed.user.email).toBe('j@x.com')
