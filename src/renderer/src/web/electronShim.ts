@@ -81,16 +81,41 @@ export function createElectronShim(): any {
     auth: {
       register: async (name: string, email: string, password: string) => {
         try {
-          const r = await api.post<{ user: unknown; sessionId: string; accessToken: string }>(
+          const r = await api.post<{ status?: string; accessToken?: string; user?: unknown; sessionId?: string }>(
             '/api/auth/register',
             { name, email, password }
           )
-          setToken(r.accessToken)
-          reconnectSocket()
+          if (r.status === 'verification_sent') return { ok: true, pending: true }
+          if (r.accessToken) {
+            setToken(r.accessToken)
+            reconnectSocket()
+          }
           return { ok: true, user: r.user, sessionId: r.sessionId }
         } catch (e) {
           return { ok: false, error: errMsg(e, 'Registration failed') }
         }
+      },
+      verifyEmail: async (token: string) => {
+        try {
+          const r = await api.post<{ user: unknown; sessionId: string; accessToken: string }>('/api/auth/verify', { token })
+          setToken(r.accessToken)
+          reconnectSocket()
+          return { ok: true, user: r.user, sessionId: r.sessionId }
+        } catch (e) {
+          return { ok: false, error: errMsg(e, 'Verification failed') }
+        }
+      },
+      resendVerification: async (email: string) => {
+        try { await api.post('/api/auth/resend-verification', { email }); return { ok: true } }
+        catch (e) { return { ok: false, error: errMsg(e, 'Could not resend') } }
+      },
+      forgotPassword: async (email: string) => {
+        try { await api.post('/api/auth/forgot-password', { email }); return { ok: true } }
+        catch (e) { return { ok: false, error: errMsg(e, 'Request failed') } }
+      },
+      resetPassword: async (token: string, newPassword: string) => {
+        try { await api.post('/api/auth/reset-password', { token, newPassword }); return { ok: true } }
+        catch (e) { return { ok: false, error: errMsg(e, 'Reset failed') } }
       },
       login: async (email: string, password: string) => {
         try {
@@ -190,6 +215,7 @@ export function createElectronShim(): any {
         markAllRead: () => api.post('/api/notifications/read-all').then(() => undefined),
       },
       clearUserData: () => api.del('/api/user/data').then(() => undefined),
+      setMonthlyOptIn: (optIn: boolean) => api.post('/api/email/monthly-opt-in', { optIn }).then(() => undefined),
       settings: {
         get: () => api.get('/api/settings'),
         save: (_userId: string, settings: unknown) => api.put('/api/settings', settings).then(() => undefined),
