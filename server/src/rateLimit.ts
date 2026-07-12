@@ -12,7 +12,12 @@ export async function checkRateLimit(key: string, limit: number, windowSec: numb
   const c = client()
   if (!c) return true // no Redis (dev/test) -> do not block
   const k = `rl:${key}`
-  const n = await c.incr(k)
-  if (n === 1) await c.expire(k, windowSec)
+  // Atomic INCR + first-hit EXPIRE so a key can never be left without a TTL.
+  const n = (await c.eval(
+    "local c = redis.call('INCR', KEYS[1]) if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end return c",
+    1,
+    k,
+    String(windowSec)
+  )) as number
   return n <= limit
 }
