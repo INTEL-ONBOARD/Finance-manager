@@ -39,18 +39,22 @@ export function startMonthlyScheduler(): void {
 }
 
 async function acquireAndRun(): Promise<void> {
-  // Redis SET NX lock so exactly one instance runs the batch. TTL 10 min.
-  if (config.redisUrl) {
-    const redis = new Redis(config.redisUrl)
-    try {
-      const ok = await redis.set('lock:monthly-batch', '1', 'PX', 10 * 60 * 1000, 'NX')
-      if (ok !== 'OK') {
-        logger.info('monthly batch lock held by another instance; skipping')
-        return
+  try {
+    // Redis SET NX lock so exactly one instance runs the batch. TTL 10 min.
+    if (config.redisUrl) {
+      const redis = new Redis(config.redisUrl)
+      try {
+        const ok = await redis.set('lock:monthly-batch', '1', 'PX', 10 * 60 * 1000, 'NX')
+        if (ok !== 'OK') {
+          logger.info('monthly batch lock held by another instance; skipping')
+          return
+        }
+      } finally {
+        redis.disconnect()
       }
-    } finally {
-      redis.disconnect()
     }
+    await runMonthlyBatch(new Date())
+  } catch (err) {
+    logger.error({ err }, 'monthly batch top-level failure')
   }
-  await runMonthlyBatch(new Date())
 }
