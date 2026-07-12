@@ -3,6 +3,7 @@ import { connectDb, closeDb } from './db'
 import { createIo } from './realtime/io'
 import { config } from './config'
 import { logger } from './logger'
+import { startMonthlyScheduler } from './email/scheduler'
 
 async function main(): Promise<void> {
   await connectDb()
@@ -13,6 +14,7 @@ async function main(): Promise<void> {
 
   await app.listen({ port: config.port, host: config.host })
   logger.info(`Finwise backend listening on ${config.host}:${config.port}`)
+  startMonthlyScheduler()
 
   const shutdown = async (signal: string): Promise<void> => {
     logger.info(`${signal} received, draining...`)
