@@ -25,6 +25,14 @@ describe('register + verify + login', () => {
     expect(typeof user?.unsubToken).toBe('string')
   })
 
+  it('stores the chosen avatar at register and returns it after verify', async () => {
+    await auth.register('Jithmi', 'j@x.com', 'secret1', 'UA', '/avatars/monster_3.png')
+    const user = await col('users').findOne({ email: 'j@x.com' })
+    expect(user?.avatar).toBe('/avatars/monster_3.png')
+    const authed = await auth.verifyEmail(tokenFromLastEmail())
+    expect(authed.user.avatar).toBe('/avatars/monster_3.png')
+  })
+
   it('login blocked until verified, then allowed', async () => {
     await auth.register('Jithmi', 'j@x.com', 'secret1')
     await expect(auth.login('j@x.com', 'wrongpass')).rejects.toMatchObject({ status: 401 })

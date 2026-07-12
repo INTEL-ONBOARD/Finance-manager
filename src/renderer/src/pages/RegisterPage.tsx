@@ -53,7 +53,7 @@ export default function RegisterPage() {
         setError('');
         setLoading(true);
         try {
-            const result = await window.electron!.auth.register(name, email, password);
+            const result = await window.electron!.auth.register(name, email, password, selectedAvatar);
             if (!result.ok) throw new Error(result.error ?? 'Registration failed');
             if (result.pending) {
                 setPending(true);

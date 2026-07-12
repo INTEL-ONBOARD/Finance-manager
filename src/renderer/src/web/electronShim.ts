@@ -79,11 +79,11 @@ export function createElectronShim(): any {
     },
 
     auth: {
-      register: async (name: string, email: string, password: string) => {
+      register: async (name: string, email: string, password: string, avatar?: string) => {
         try {
           const r = await api.post<{ status?: string; accessToken?: string; user?: unknown; sessionId?: string }>(
             '/api/auth/register',
-            { name, email, password }
+            { name, email, password, ...(avatar ? { avatar } : {}) }
           )
           if (r.status === 'verification_sent') return { ok: true, pending: true }
           if (r.accessToken) {
@@ -216,6 +216,8 @@ export function createElectronShim(): any {
       },
       clearUserData: () => api.del('/api/user/data').then(() => undefined),
       setMonthlyOptIn: (optIn: boolean) => api.post('/api/email/monthly-opt-in', { optIn }).then(() => undefined),
+      unsubscribeMonthly: (token: string) =>
+        api.get(`/api/email/unsubscribe?token=${encodeURIComponent(token)}`).then(() => undefined),
       settings: {
         get: () => api.get('/api/settings'),
         save: (_userId: string, settings: unknown) => api.put('/api/settings', settings).then(() => undefined),

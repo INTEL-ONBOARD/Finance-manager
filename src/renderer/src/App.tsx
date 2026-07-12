@@ -22,6 +22,7 @@ import OnboardingPage from './pages/OnboardingPage'
 import VerifyPage from './pages/VerifyPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import UnsubscribePage from './pages/UnsubscribePage'
 import { useAuth } from './context/AuthContext'
 import { Hexagon } from 'lucide-react'
 
@@ -118,6 +119,7 @@ const router = createHashRouter([
   { path: '/verify', element: <VerifyPage /> },
   { path: '/forgot', element: <ForgotPasswordPage /> },
   { path: '/reset', element: <ResetPasswordPage /> },
+  { path: '/unsubscribe', element: <UnsubscribePage /> },
 ])
 
 export default function App() {

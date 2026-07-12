@@ -52,14 +52,17 @@ export async function register(
   name: string,
   email: string,
   password: string,
-  _ua?: string
+  _ua?: string,
+  avatar?: string | null
 ): Promise<{ status: 'verification_sent' }> {
   const users = col('users')
   if (await users.findOne({ email })) throw new HttpError(409, 'Email already registered')
   const { salt, hash } = await hashPassword(password)
   const id = `u_${Date.now()}`
   const unsubToken = randomBytes(16).toString('hex')
-  await users.insertOne({ id, name, email, salt, hash, emailVerified: false, monthlyOptIn: true, unsubToken })
+  // Store the chosen avatar now so it survives the verify-before-login flow
+  // (login and verifyEmail return it on the user object).
+  await users.insertOne({ id, name, email, salt, hash, avatar: avatar ?? null, emailVerified: false, monthlyOptIn: true, unsubToken })
   const raw = await createEmailToken('verify', id, email)
   await sendVerification({ name, email }, `${config.appWebUrl}/verify?token=${raw}`)
   return { status: 'verification_sent' }

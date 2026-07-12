@@ -7,7 +7,7 @@ import { config } from '../config'
 import { checkRateLimit } from '../rateLimit'
 
 const credsSchema = z.object({ email: z.string().email(), password: z.string().min(1) })
-const registerSchema = credsSchema.extend({ name: z.string().min(1) })
+const registerSchema = credsSchema.extend({ name: z.string().min(1), avatar: z.string().optional() })
 
 function setAuthCookie(reply: FastifyReply, token: string): void {
   reply.setCookie(config.cookieName, token, {
@@ -22,7 +22,7 @@ function setAuthCookie(reply: FastifyReply, token: string): void {
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/api/auth/register', async (req, reply) => {
     const body = registerSchema.parse(req.body)
-    const res = await auth.register(body.name, body.email, body.password, req.headers['user-agent'])
+    const res = await auth.register(body.name, body.email, body.password, req.headers['user-agent'], body.avatar)
     reply.code(201)
     return res
   })
