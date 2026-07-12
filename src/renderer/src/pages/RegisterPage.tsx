@@ -68,8 +68,10 @@ export default function RegisterPage() {
                 }
             }
             localStorage.setItem('finwise-onboarded', 'false');
-            // Force a re-mount so AuthProvider re-reads localStorage
-            window.location.replace('/#/onboarding');
+            // Force a re-mount so AuthProvider re-reads localStorage. Preserve the
+            // app's base path (e.g. /finwise-app/) — an absolute '/#/onboarding'
+            // would drop it and land on the site root (blank page).
+            window.location.replace(`${window.location.pathname}#/onboarding`);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Registration failed');
         } finally {

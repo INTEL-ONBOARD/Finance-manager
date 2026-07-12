@@ -28,7 +28,9 @@ export default function VerifyPage(): JSX.Element {
         localStorage.setItem('finwise-onboarded', 'false')
         setMsg('Email verified! Redirecting to your account…')
         setStatus('success')
-        setTimeout(() => window.location.replace('/#/onboarding'), 1200)
+        // Preserve the app's base path (e.g. /finwise-app/) — an absolute
+        // '/#/onboarding' would drop it and land on the site root (blank page).
+        setTimeout(() => window.location.replace(`${window.location.pathname}#/onboarding`), 1200)
       } else {
         setMsg(r.error || 'Verification failed. The link may have expired.')
         setStatus('error')
