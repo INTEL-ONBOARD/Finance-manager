@@ -13,6 +13,7 @@ import { settingsRoutes } from './routes/settings.routes'
 import { sessionsRoutes } from './routes/sessions.routes'
 import { chatRoutes } from './routes/chat.routes'
 import { userRoutes } from './routes/user.routes'
+import { emailRoutes } from './routes/email.routes'
 
 export async function buildApp() {
   // Fastify v5: a pre-built logger instance must be passed as `loggerInstance`
@@ -32,6 +33,7 @@ export async function buildApp() {
   // Public
   await app.register(healthRoutes)
   await app.register(authRoutes)
+  await app.register(emailRoutes)
 
   // Protected — everything below requires a verified token.
   await app.register(async (secured) => {

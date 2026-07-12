@@ -126,3 +126,12 @@ export async function resetPassword(rawToken: string, newPassword: string): Prom
   await col('users').updateOne({ id: userId }, { $set: { salt, hash } })
   await col('sessions').deleteMany({ userId }) // force re-login everywhere
 }
+
+export async function setMonthlyOptIn(userId: string, optIn: boolean): Promise<void> {
+  await col('users').updateOne({ id: userId }, { $set: { monthlyOptIn: optIn } })
+}
+
+export async function unsubscribeByToken(token: string): Promise<void> {
+  if (!token) return
+  await col('users').updateOne({ unsubToken: token }, { $set: { monthlyOptIn: false } })
+}
