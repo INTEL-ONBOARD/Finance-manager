@@ -6,6 +6,7 @@ import { config } from '../config'
 import { logger } from '../logger'
 import { verifyToken } from '../auth/tokens'
 import { col } from '../db'
+import { isParticipant } from '../chat/participants'
 
 let io: IOServer | null = null
 
@@ -40,7 +41,7 @@ export async function createIo(httpServer: HttpServer): Promise<IOServer> {
       const fromCookie = parseCookies(socket.handshake.headers.cookie ?? '')[config.cookieName]
       const token = fromAuth || fromCookie
       if (!token) return next(new Error('unauthorized'))
-      const claims = verifyToken(token)
+      const claims = verifyToken(token, 'access')
       socket.data.userId = claims.sub
       socket.data.sessionId = claims.sid
       next()
@@ -55,7 +56,9 @@ export async function createIo(httpServer: HttpServer): Promise<IOServer> {
     socket.join('presence') // receives presence broadcasts
 
     socket.on('conversation:join', (conversationId: unknown) => {
-      if (typeof conversationId === 'string') socket.join(`conv:${conversationId}`)
+      if (typeof conversationId === 'string' && isParticipant(conversationId, userId)) {
+        socket.join(`conv:${conversationId}`)
+      }
     })
     socket.on('conversation:leave', (conversationId: unknown) => {
       if (typeof conversationId === 'string') socket.leave(`conv:${conversationId}`)

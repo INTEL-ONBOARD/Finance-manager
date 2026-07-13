@@ -61,9 +61,16 @@ export async function register(
   const { salt, hash } = await hashPassword(password)
   const id = `u_${Date.now()}`
   const unsubToken = randomBytes(16).toString('hex')
-  // Store the chosen avatar now so it survives the verify-before-login flow
-  // (login and verifyEmail return it on the user object).
-  await users.insertOne({ id, name, email, salt, hash, avatar: avatar ?? null, emailVerified: false, monthlyOptIn: true, unsubToken })
+  try {
+    // Store the chosen avatar now so it survives the verify-before-login flow
+    // (login and verifyEmail return it on the user object).
+    await users.insertOne({ id, name, email, salt, hash, avatar: avatar ?? null, emailVerified: false, monthlyOptIn: true, unsubToken })
+  } catch (err) {
+    // The findOne check above has a race window; the unique index on `email`
+    // is the real guard against two concurrent registers for the same address.
+    if ((err as { code?: number }).code === 11000) throw new HttpError(409, 'Email already registered')
+    throw err
+  }
   try {
     const raw = await createEmailToken('verify', id, email)
     await sendVerification({ name, email }, `${config.appWebUrl}/verify?token=${raw}`)

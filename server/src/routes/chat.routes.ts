@@ -1,6 +1,10 @@
 import type { FastifyInstance } from 'fastify'
 import { col } from '../db'
 import { emitToConversation } from '../realtime/io'
+import { isParticipant, dmRegexFor } from '../chat/participants'
+import { HttpError } from '../errors'
+
+const MAX_MESSAGES_LIMIT = 100
 
 export async function chatRoutes(app: FastifyInstance): Promise<void> {
   // Other users with their latest presence (mirrors chat:users:list).
@@ -25,7 +29,7 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
     const userId = req.userId
     return col('messages')
       .aggregate([
-        { $match: { $or: [{ conversationId: 'group' }, { conversationId: { $regex: userId } }] } },
+        { $match: { $or: [{ conversationId: 'group' }, { conversationId: { $regex: dmRegexFor(userId) } }] } },
         { $sort: { sentAt: -1 } },
         { $group: { _id: '$conversationId', lastMessage: { $first: '$body' }, lastMessageAt: { $first: '$sentAt' } } },
         { $project: { _id: 0, id: '$_id', lastMessage: 1, lastMessageAt: 1 } },
@@ -40,25 +44,41 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
       limit?: string
       before?: string
     }
-    const filter: Record<string, unknown> = { conversationId: conversationId ?? '' }
+    const convoId = conversationId ?? ''
+    if (!isParticipant(convoId, req.userId)) throw new HttpError(403, 'Not a participant in this conversation')
+    const filter: Record<string, unknown> = { conversationId: convoId }
     if (before) filter.sentAt = { $lt: before }
+    const cappedLimit = Math.min(parseInt(limit ?? '40', 10) || 40, MAX_MESSAGES_LIMIT)
     const msgs = await col('messages')
       .find(filter, { projection: { _id: 0 } })
       .sort({ sentAt: -1 })
-      .limit(parseInt(limit ?? '40', 10))
+      .limit(cappedLimit)
       .toArray()
     return msgs.reverse()
   })
 
   app.post('/api/chat/messages', async (req) => {
-    const doc = (req.body ?? {}) as Record<string, unknown>
+    const body = (req.body ?? {}) as Record<string, unknown>
+    const conversationId = String(body.conversationId ?? '')
+    if (!isParticipant(conversationId, req.userId)) throw new HttpError(403, 'Not a participant in this conversation')
+    const sender = await col('users').findOne(
+      { id: req.userId },
+      { projection: { _id: 0, name: 1 } }
+    )
+    if (!sender) throw new HttpError(404, 'User not found')
     const id = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-    const message = { ...doc, id }
+    // Identity is always stamped from the verified token, never trusted from
+    // the client — otherwise any caller could post messages as anyone else.
+    const message = {
+      conversationId,
+      body: String(body.body ?? ''),
+      sentAt: new Date().toISOString(),
+      id,
+      senderId: req.userId,
+      senderName: sender.name as string,
+    }
     await col('messages').insertOne(message)
-    const conversationId = String(doc.conversationId ?? '')
-    // Strip _id mongo adds in place before broadcasting.
-    const { _id, ...clean } = message as Record<string, unknown>
-    emitToConversation(conversationId, 'chat:message', { conversationId, message: clean })
+    emitToConversation(conversationId, 'chat:message', { conversationId, message })
     return { ok: true, id }
   })
 }

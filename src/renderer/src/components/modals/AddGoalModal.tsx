@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus } from 'lucide-react';
 import { useFinance } from '@/context/FinanceContext';
 
-const ICON_OPTIONS = ['Umbrella', 'Plane', 'Laptop', 'Home', 'Car', 'GraduationCap', 'Heart', 'Star', 'ShoppingBag', 'Smartphone'];
 const COLOR_OPTIONS = ['#4ade80', '#60a5fa', '#f59e0b', '#f87171', '#a78bfa', '#34d399', '#f97316', '#e879f9'];
 
 interface Props { open: boolean; onClose: () => void; }
@@ -53,7 +52,7 @@ export default function AddGoalModal({ open, onClose }: Props) {
           >
             <div className="flex items-center justify-between mb-5">
               <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>New Savings Goal</h2>
-              <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors" style={{ color: 'var(--text-muted)' }}>
+              <button onClick={onClose} aria-label="Close" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors" style={{ color: 'var(--text-muted)' }}>
                 <X size={15} />
               </button>
             </div>

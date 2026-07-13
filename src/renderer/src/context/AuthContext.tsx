@@ -5,7 +5,7 @@ interface User {
     name: string;
     email: string;
     sessionId?: string;
-    avatar?: string;
+    avatar?: string | null;
 }
 
 interface AuthContextType {
@@ -35,6 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (savedUser) {
             try {
                 setUser(JSON.parse(savedUser));
+                // Confirm the cached session hasn't been revoked (logout on
+                // another device, "sign out all sessions", expiry) before
+                // trusting it beyond this optimistic first render. Absent on
+                // the plain direct-Mongo desktop build, which has no token.
+                window.electron?.auth.validateSession?.().then((valid) => {
+                    if (!valid) {
+                        setUser(null);
+                        localStorage.removeItem('finmate-auth-user');
+                    }
+                });
             } catch {
                 localStorage.removeItem('finmate-auth-user');
             }
@@ -62,6 +72,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
+        // Revoke the session server-side (web / desktop-backend-mode); the
+        // plain direct-Mongo desktop build has no `logout` method to call.
+        window.electron?.auth.logout?.().catch(() => {});
         setUser(null);
         localStorage.removeItem('finmate-auth-user');
     };

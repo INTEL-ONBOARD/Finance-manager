@@ -238,6 +238,7 @@ export default function AddAccountModal({ open, onClose, editAccount }: Props) {
               </h2>
               <button
                 onClick={handleClose}
+                aria-label="Close"
                 style={{
                   background: 'none', border: 'none', cursor: 'pointer',
                   color: 'var(--text-muted)', padding: 4, borderRadius: 6,

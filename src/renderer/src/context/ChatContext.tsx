@@ -96,7 +96,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }
     }).catch(() => {});
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Ref keeps addNotification accessible in the onMessage closure without re-registering
   const addNotificationRef = useRef(addNotification);
@@ -141,7 +141,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
     });
     return unsubscribe;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Real-time presence updates via Change Stream push
   useEffect(() => {
@@ -153,7 +153,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       );
     });
     return unsubscribe;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Switch active conversation
   const openConversation = useCallback(async (id: string) => {
@@ -174,7 +174,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } catch {
       // Silently ignore — user sees empty thread
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const openDM = useCallback((otherUser: ChatUser) => {
     if (!user) return;
@@ -197,9 +197,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       body: body.trim(),
       sentAt: new Date().toISOString(),
     };
-    el.sendMessage(doc).catch(() => {});
-    // No optimistic update — Change Stream will deliver it in ~50ms
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+    // No optimistic update — Change Stream will deliver it in ~50ms. Since
+    // nothing appears locally on send, a failure must be surfaced explicitly
+    // or the user has no idea their message never went anywhere.
+    el.sendMessage(doc).catch(() => {
+      addNotificationRef.current({
+        id: `notif_chat_send_fail_${Date.now()}`,
+        title: 'Message not sent',
+        body: 'Your message could not be delivered. Please try again.',
+        time: 'Just now',
+        type: 'alert',
+      });
+    });
+  }, [user]);
 
   const loadOlderMessages = useCallback(async () => {
     const el = window.electron?.chat;
@@ -212,7 +222,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore
     }
-  }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   const markConversationRead = useCallback((id: string) => {
     setUnreadCounts(prev => ({ ...prev, [id]: 0 }));
@@ -262,7 +272,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         el.unwatchConversation(id).catch(() => {});
       }
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <ChatContext.Provider value={{

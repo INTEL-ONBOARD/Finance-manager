@@ -6,6 +6,16 @@ function required(name: string): string {
   return v
 }
 
+const isProd = process.env.NODE_ENV === 'production'
+const rawCorsOrigins = process.env.CORS_ORIGINS ?? ''
+
+// A wildcard origin combined with credentials:true lets any website make
+// authenticated requests using a signed-in user's cookies. In production this
+// must be an explicit allowlist; only fall back to "allow everything" in dev.
+if (isProd && (!rawCorsOrigins || rawCorsOrigins === '*')) {
+  throw new Error('CORS_ORIGINS must be set to an explicit comma-separated allowlist in production')
+}
+
 export const config = {
   port: parseInt(process.env.PORT ?? '8080', 10),
   host: process.env.HOST ?? '0.0.0.0',
@@ -25,8 +35,10 @@ export const config = {
   emailFrom: process.env.EMAIL_FROM ?? 'Finwise <no-reply@example.com>',
   resendApiKey: process.env.RESEND_API_KEY ?? '',
   monthlyCron: process.env.MONTHLY_CRON ?? '0 8 1 * *',
+  // Dev-only convenience: no CORS_ORIGINS -> allow any origin. Production is
+  // guarded above and always requires an explicit allowlist.
   corsOrigins:
-    (process.env.CORS_ORIGINS ?? '*') === '*'
+    rawCorsOrigins === '*' || !rawCorsOrigins
       ? true
-      : (process.env.CORS_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+      : rawCorsOrigins.split(',').map((s) => s.trim()).filter(Boolean),
 }

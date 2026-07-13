@@ -257,6 +257,12 @@ function registerIpcHandlers(): void {
   })
 
   // ── Avatar ────────────────────────────────────────────────────────────────────
+  // fs:readFile / avatar:save take a raw filesystem path from the renderer.
+  // Restricting them to paths the OS picker itself just returned (rather than
+  // trusting any string the renderer sends) means a compromised renderer
+  // can't use these IPC calls to read arbitrary files off disk.
+  const pickedPaths = new Set<string>()
+
   ipcMain.handle('dialog:openImage', async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0]
     const result = await dialog.showOpenDialog(win, {
@@ -264,7 +270,9 @@ function registerIpcHandlers(): void {
       filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
       properties: ['openFile']
     })
-    return result.canceled ? null : result.filePaths[0]
+    if (result.canceled) return null
+    pickedPaths.add(result.filePaths[0])
+    return result.filePaths[0]
   })
 
   ipcMain.handle('dialog:openFile', async (event, filters?: { name: string; extensions: string[] }[]) => {
@@ -275,15 +283,21 @@ function registerIpcHandlers(): void {
         { name: 'Spreadsheets & CSV', extensions: ['xlsx', 'xls', 'csv'] },
       ],
     })
-    return result.canceled ? null : result.filePaths[0]
+    if (result.canceled) return null
+    pickedPaths.add(result.filePaths[0])
+    return result.filePaths[0]
   })
 
   ipcMain.handle('fs:readFile', async (_e, filePath: string) => {
+    if (!pickedPaths.has(filePath)) throw new Error('File was not selected via the file picker')
     const data = await fsPromises.readFile(filePath)
     return data.toString('base64')
   })
 
   ipcMain.handle('db:user:avatar:save', async (_e, userId: string, filePath: string) => {
+    if (!pickedPaths.has(filePath)) {
+      return { ok: false, error: 'File was not selected via the file picker' }
+    }
     const allowedExts = ['jpg', 'jpeg', 'png', 'webp']
     const ext = filePath.split('.').pop()?.toLowerCase() ?? ''
     if (!allowedExts.includes(ext)) {
@@ -561,7 +575,10 @@ async function bootstrap(): Promise<void> {
       responseHeaders['Content-Security-Policy'] = [
         [
           "default-src 'self' file:",
-          "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+          // No inline <script> tags or eval-family calls anywhere in the built
+          // renderer (Vite emits only an external module script) — same-origin
+          // is all script-src needs.
+          "script-src 'self'",
           "style-src 'self' 'unsafe-inline'",
           "font-src 'self' data:",
           "img-src 'self' data: blob:",

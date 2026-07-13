@@ -23,8 +23,11 @@ export async function connectDb(): Promise<Db> {
     db.collection('settings').createIndex({ userId: 1 }),
     db.collection('sessions').createIndex({ userId: 1 }),
     db.collection('sessions').createIndex({ sessionId: 1 }),
-    db.collection('users').createIndex({ email: 1 }),
-    db.collection('users').createIndex({ id: 1 }),
+    // Unique so register's findOne-then-insertOne can't race into duplicate
+    // accounts; wrapped in the shared .catch below so pre-existing duplicate
+    // data (if any) only skips this index instead of crashing startup.
+    db.collection('users').createIndex({ email: 1 }, { unique: true }),
+    db.collection('users').createIndex({ id: 1 }, { unique: true }),
     db.collection('messages').createIndex({ conversationId: 1, sentAt: -1 }),
     db.collection('emailTokens').createIndex({ tokenHash: 1 }),
     db.collection('emailTokens').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),

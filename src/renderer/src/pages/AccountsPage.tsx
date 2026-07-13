@@ -234,7 +234,7 @@ export default function AccountsPage() {
                     interval="preserveStartEnd" />
                   <YAxis hide domain={['auto', 'auto']} />
                   <Tooltip
-                    formatter={(v: number) => [formatCurrency(v, currency, 0), 'Balance']}
+                    formatter={(v: number | undefined) => [formatCurrency(v ?? 0, currency, 0), 'Balance']}
                     contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, fontSize: 12 }}
                     labelStyle={{ color: 'var(--text-muted)' }}
                     cursor={{ stroke: 'var(--border)', strokeWidth: 1 }}
@@ -354,6 +354,7 @@ export default function AccountsPage() {
                 <div ref={isMenuOpen ? menuRef : undefined} style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
                   <button
                     onClick={() => setMenuOpen(isMenuOpen ? null : acct.id)}
+                    aria-label={`More options for ${acct.name}`}
                     style={{
                       background: 'rgba(0,0,0,0.30)', border: 'none', cursor: 'pointer',
                       color: '#fff', padding: '4px 6px', borderRadius: 8,

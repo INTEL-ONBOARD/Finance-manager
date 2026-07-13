@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Hexagon, CheckCircle, XCircle, Loader } from 'lucide-react'
 
-export default function VerifyPage(): JSX.Element {
+export default function VerifyPage() {
   const [msg, setMsg] = useState('Verifying your email…')
   const [status, setStatus] = useState<'pending' | 'success' | 'error'>('pending')
   const navigate = useNavigate()

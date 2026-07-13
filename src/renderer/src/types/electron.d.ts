@@ -41,6 +41,11 @@ declare global {
         forgotPassword: (email: string) => Promise<{ ok: boolean; error?: string }>;
         resetPassword: (token: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
         resendVerification: (email: string) => Promise<{ ok: boolean; error?: string }>;
+        // Web/desktop-backend-mode only: revokes the session / confirms it's
+        // still valid server-side. Absent on the plain (direct-Mongo) desktop
+        // build, which has no token to revoke or validate.
+        logout?: () => Promise<{ ok: boolean }>;
+        validateSession?: () => Promise<boolean>;
       };
       store: {
         get: (key: string) => Promise<unknown>;

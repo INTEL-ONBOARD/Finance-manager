@@ -12,6 +12,9 @@ files:
   - node_modules/**/*
 
 # macOS — produces .dmg for both Intel (x64) and Apple Silicon (arm64)
+# Unsigned build: identity/hardenedRuntime/gatekeeperAssess are off because no
+# Developer ID certificate is configured yet. Auto-update integrity currently
+# rests on HTTPS alone as a result. See docs/CODE_SIGNING.md to set this up.
 mac:
   target:
     - target: dmg

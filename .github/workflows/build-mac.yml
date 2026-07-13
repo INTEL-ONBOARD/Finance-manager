@@ -31,11 +31,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
+      - name: Lint
+        run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build:desktop:backend
+
+      # Unsigned build — see docs/CODE_SIGNING.md to add CSC_LINK/CSC_KEY_PASSWORD
+      # (+ APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/APPLE_TEAM_ID for notarization).
       - name: Package (macOS)
         run: npx electron-builder --mac --publish ${{ github.event.inputs.publish == 'true' && 'always' || 'never' }}
         env:

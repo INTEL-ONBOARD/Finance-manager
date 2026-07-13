@@ -231,18 +231,27 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
       setSettings(null);
       return;
     }
-    // Load currency setting separately (settings.get returns a single doc)
-    window.electron.db.settings?.get(userId).then((s: Record<string, unknown> | null) => {
-      setCurrency((s?.currency as string) ?? 'USD');
-      setSettings(s as UserSettings | null);
+    // Load currency setting separately (settings.get returns a single doc).
+    // buildNotifications needs the freshly-fetched value below, not the
+    // `currency` state — that still holds the previous user's (or default)
+    // value until this promise resolves and setCurrency's re-render lands.
+    let resolvedCurrency = 'USD';
+    const settingsPromise = window.electron.db.settings?.get(userId).then((s) => {
+      resolvedCurrency = s?.currency ?? 'USD';
+      setCurrency(resolvedCurrency);
+      // window.electron's UserSettings (ambient, fixed shape) vs this file's
+      // UserSettings (index-signatured, so callers can read arbitrary keys)
+      // are structurally compatible but declared separately.
+      setSettings(s as unknown as UserSettings | null);
     }).catch(() => { /* keep default USD */ });
     Promise.all([
+      settingsPromise,
       window.electron.db.transactions.getAll(userId),
       window.electron.db.goals.getAll(userId),
       window.electron.db.bills.getAll(userId),
       window.electron.db.accounts.getAll(userId),
       window.electron.db.notifications.getAll(userId),
-    ]).then(([txns, gs, bs, accs, notifs]) => {
+    ]).then(([, txns, gs, bs, accs, notifs]) => {
       setTransactions(txns);
       setGoals(gs);
       setBills(bs);
@@ -250,7 +259,7 @@ export function FinanceProvider({ userId, children }: FinanceProviderProps) {
       setNotifications(notifs as Notification[]);
       // Generate smart notifications from live data
       const existingIds = new Set((notifs as Notification[]).map(n => n.id));
-      const generated = buildNotifications(bs as Bill[], gs as SavingsGoal[], txns as Transaction[], existingIds, currency);
+      const generated = buildNotifications(bs as Bill[], gs as SavingsGoal[], txns as Transaction[], existingIds, resolvedCurrency);
       for (const n of generated) {
         const doc: Notification = { ...n, read: false };
         setNotifications(prev => prev.some(x => x.id === doc.id) ? prev : [doc, ...prev]);

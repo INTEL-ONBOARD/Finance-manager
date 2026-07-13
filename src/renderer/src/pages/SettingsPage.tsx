@@ -253,6 +253,7 @@ export default function SettingsPage() {
     setClearing(true);
     try {
       await window.electron?.db.clearUserData(user!.id);
+      setClearDone(true);
       // Reload the renderer so FinanceContext re-hydrates from the now-empty DB
       window.location.reload();
     } finally {
@@ -857,15 +858,16 @@ export default function SettingsPage() {
                         ))}
                       </ul>
 
-                      <button disabled={plan.current}
-                        className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:brightness-110 mt-auto"
+                      <button disabled
+                        title={plan.current ? undefined : 'Billing is not available yet'}
+                        className="w-full py-2.5 rounded-xl text-sm font-semibold mt-auto"
                         style={{
-                          background: plan.current ? 'transparent' : 'var(--accent-brand)',
-                          color: plan.current ? 'var(--text-muted)' : '#0d1117',
-                          border: plan.current ? '1px solid var(--border)' : 'none',
-                          cursor: plan.current ? 'not-allowed' : 'pointer',
+                          background: 'transparent',
+                          color: 'var(--text-muted)',
+                          border: '1px solid var(--border)',
+                          cursor: 'not-allowed',
                         }}>
-                        {plan.current ? 'Current Plan' : 'Upgrade Now →'}
+                        {plan.current ? 'Current Plan' : 'Coming Soon'}
                       </button>
                     </div>
                   ))}

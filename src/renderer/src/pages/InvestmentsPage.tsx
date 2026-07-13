@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useFinance } from '@/context/FinanceContext';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -28,6 +28,14 @@ export default function InvestmentsPage() {
 
   return (
     <>
+      <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl mb-1"
+        style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+        <Info size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+        <span style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
+          Sample data — brokerage-linked investment tracking is not yet connected to your account.
+        </span>
+      </div>
+
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Portfolio Value',    value: formatCurrency(totalValue, currency, 0),                                                        color: 'var(--accent-brand)' },

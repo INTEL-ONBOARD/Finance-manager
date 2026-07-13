@@ -32,7 +32,14 @@ const SEARCH_LINKS = [
   { label: 'Bills', href: '/bills' },
   { label: 'Investments', href: '/investments' },
   { label: 'Accounts', href: '/accounts' },
+  { label: 'Community', href: '/community' },
+  { label: 'Market', href: '/market' },
+  { label: 'Portfolio', href: '/portfolio' },
+  { label: 'Predictions', href: '/predictions' },
+  { label: 'Exchanges', href: '/exchanges' },
+  { label: 'AI Chat', href: '/ai-chat' },
   { label: 'Settings', href: '/settings' },
+  { label: 'Help', href: '/help' },
 ];
 
 const iconMap = {
@@ -180,6 +187,7 @@ export default function Topbar() {
             <div ref={notifRef} className="relative flex items-center">
               <button
                 onClick={() => setNotifOpen(p => !p)}
+                aria-label="Notifications"
                 className="relative transition-colors rounded-full p-0.5"
               style={{ color: 'var(--text-muted)' }}
               >
@@ -297,6 +305,7 @@ export default function Topbar() {
             <button
               onClick={handleLogout}
               title="Log out"
+              aria-label="Log out"
               className="flex items-center transition-colors rounded-full p-0.5"
             style={{ color: 'var(--text-muted)' }}
             >

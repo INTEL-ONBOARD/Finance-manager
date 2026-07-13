@@ -6,6 +6,7 @@ import App from './App'
 import './globals.css'
 import { installWebShim } from './web/installShim'
 import { installDesktopBackendBridge } from './web/installDesktopBridge'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 // Web build (no Electron): full window.electron shim backed by the backend.
 // Desktop built with VITE_USE_BACKEND=true: route data/auth/chat to the backend
@@ -38,9 +39,11 @@ function AppWithFinance() {
 
 function Root() {
   return (
-    <AuthProvider>
-      <AppWithFinance />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppWithFinance />
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 

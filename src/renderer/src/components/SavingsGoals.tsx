@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Plus, Trash2, Umbrella, Plane, Laptop, Home, Car, GraduationCap, Heart, Star, ShoppingBag, Smartphone } from 'lucide-react';
+import { ChevronRight, Plus, Trash2, Umbrella, Plane, Laptop, Home, Car, GraduationCap, Heart, Star, ShoppingBag, Smartphone, type LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useFinance } from '@/context/FinanceContext';
 import AddGoalModal from './modals/AddGoalModal';
 import { formatCurrency } from '@/utils/formatCurrency';
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LucideIcon> = {
   Umbrella, Plane, Laptop, Home, Car, GraduationCap, Heart, Star, ShoppingBag, Smartphone,
 };
 

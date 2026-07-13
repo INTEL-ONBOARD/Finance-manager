@@ -239,6 +239,7 @@ export default function ImportStatementModal({ open, onClose }: Props) {
               </div>
               <button
                 onClick={resetAndClose}
+                aria-label="Close"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, borderRadius: 6, display: 'flex' }}
               >
                 <X size={20} />
@@ -588,7 +589,11 @@ export default function ImportStatementModal({ open, onClose }: Props) {
                 padding: '16px 24px', borderTop: '1px solid var(--border)',
               }}>
                 <button
-                  onClick={() => { setError(''); step > 0 ? setStep(s => s - 1) : resetAndClose(); }}
+                  onClick={() => {
+                    setError('');
+                    if (step > 0) setStep(s => s - 1);
+                    else resetAndClose();
+                  }}
                   style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 14, cursor: 'pointer', fontWeight: 500 }}
                 >
                   {step === 0 ? 'Cancel' : 'Back'}

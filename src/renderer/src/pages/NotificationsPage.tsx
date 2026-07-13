@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, AlertCircle, CheckCircle2, Info, Check, Trash2, BellOff } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Info, Check, BellOff } from 'lucide-react';
 import { useFinance } from '@/context/FinanceContext';
 
 const TYPE_CONFIG = {

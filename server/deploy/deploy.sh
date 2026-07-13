@@ -34,8 +34,13 @@ ssh "$SSH_HOST" "test -f $REMOTE_DIR/.env" || {
 }
 
 echo "==> [4/5] Building and starting containers ($COMPOSE_FILE)"
-ssh "$SSH_HOST" "cd $REMOTE_DIR && docker compose -f $COMPOSE_FILE up -d --build"
+ssh "$SSH_HOST" "cd $REMOTE_DIR && docker compose -f $COMPOSE_FILE up -d --build --wait"
 
-echo "==> [5/5] Status"
+echo "==> [5/5] Verifying the api container is healthy"
 ssh "$SSH_HOST" "cd $REMOTE_DIR && docker compose -f $COMPOSE_FILE ps"
+if ! ssh "$SSH_HOST" "cd $REMOTE_DIR && docker compose -f $COMPOSE_FILE ps --status running --format json api | grep -q running"; then
+  echo "ERROR: api container is not running after deploy — check logs with:"
+  echo "       ssh $SSH_HOST 'cd $REMOTE_DIR && docker compose -f $COMPOSE_FILE logs api'"
+  exit 1
+fi
 echo "Done. Health: curl http://$(echo "$SSH_HOST" | sed 's/.*@//')/health"

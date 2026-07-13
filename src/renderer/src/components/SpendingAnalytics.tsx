@@ -13,7 +13,17 @@ const CATEGORY_COLORS: Record<string, string> = {
   Gym: '#34d399', Shopping: '#fbbf24', Other: '#64748b',
 };
 
-const PieTooltip = ({ active, payload, currency }: any) => {
+interface TooltipEntry {
+  name: string;
+  value: number;
+  payload: { color: string };
+}
+
+const PieTooltip = ({ active, payload, currency }: {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  currency: string;
+}) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="px-3 py-2 rounded-xl shadow-xl"

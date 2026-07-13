@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, MessageCircle, Book, HelpCircle } from 'lucide-react';
 const faqs = [
@@ -12,6 +12,16 @@ const faqs = [
 
 export default function HelpPage() {
   const [open, setOpen] = useState<number | null>(null);
+  const faqRef = useRef<HTMLDivElement>(null);
+
+  const cards = [
+    {
+      icon: Book, label: 'Getting Started', desc: 'Set up your accounts and goals',
+      onClick: () => faqRef.current?.scrollIntoView({ behavior: 'smooth' }),
+    },
+    { icon: MessageCircle, label: 'Contact Support', desc: 'Coming soon', onClick: undefined },
+    { icon: ChevronDown, label: 'Video Tutorials', desc: 'Coming soon', onClick: undefined },
+  ];
 
   return (
     <>
@@ -27,14 +37,13 @@ export default function HelpPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        {[
-          { icon: Book,          label: 'Getting Started',   desc: 'Set up your accounts and goals' },
-          { icon: MessageCircle, label: 'Contact Support',   desc: 'Get help from our team' },
-          { icon: ChevronDown,   label: 'Video Tutorials',   desc: 'Step-by-step walkthroughs' },
-        ].map((item, i) => (
+        {cards.map((item, i) => (
           <motion.div key={item.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
-            className="card p-4 cursor-pointer flex items-start gap-3">
+            onClick={item.onClick}
+            role={item.onClick ? 'button' : undefined}
+            className={`card p-4 flex items-start gap-3 ${item.onClick ? 'cursor-pointer' : ''}`}
+            style={{ opacity: item.onClick ? 1 : 0.6 }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
               style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-light)' }}>
               <item.icon size={15} style={{ color: 'var(--accent-blue)' }} />
@@ -47,7 +56,7 @@ export default function HelpPage() {
         ))}
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+      <motion.div ref={faqRef} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
         className="card p-5">
         <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>Frequently Asked Questions</h3>
         <div className="flex flex-col">

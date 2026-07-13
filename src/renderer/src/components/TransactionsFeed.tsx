@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Plus, ShoppingCart, Utensils, Zap, Car, Home, Dumbbell, Wifi, Music, ArrowDownLeft, Tv, Package, Heart } from 'lucide-react';
+import { ChevronRight, Plus, ShoppingCart, Utensils, Zap, Car, Home, Dumbbell, Wifi, Music, ArrowDownLeft, Tv, Package, Heart, type LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useFinance, Transaction } from '@/context/FinanceContext';
 import AddTransactionModal from './modals/AddTransactionModal';
@@ -9,7 +9,7 @@ import { formatCurrency } from '@/utils/formatCurrency';
 
 type Tab = 'All' | 'Income' | 'Food' | 'Transport' | 'Bills';
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LucideIcon> = {
   Groceries: ShoppingCart, Dining: Utensils, Utilities: Zap, Transport: Car,
   Rent: Home, Gym: Dumbbell, Internet: Wifi, Spotify: Music, Netflix: Tv,
   Salary: ArrowDownLeft, Freelance: ArrowDownLeft, Investment: ArrowDownLeft,

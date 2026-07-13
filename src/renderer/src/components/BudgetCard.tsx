@@ -7,13 +7,24 @@ import { useFinance } from '@/context/FinanceContext';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 
-const CustomTooltip = ({ active, payload, label, currency }: any) => {
+interface TooltipEntry {
+  name: string;
+  value: number;
+  fill?: string;
+}
+
+const CustomTooltip = ({ active, payload, label, currency }: {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+  currency: string;
+}) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="px-3 py-2.5 rounded-xl shadow-xl"
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>{label}</div>
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2 mb-1">
           <div className="w-2 h-2 rounded-full" style={{ background: p.fill }} />
           <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{p.name}:</span>

@@ -126,7 +126,7 @@ export default function OnboardingPage() {
               {step === 1 && (
                 <StepWelcome
                   name={user?.name ?? 'there'}
-                  avatar={user?.avatar}
+                  avatar={user?.avatar ?? undefined}
                   onNext={next}
                 />
               )}

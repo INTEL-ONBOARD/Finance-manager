@@ -146,6 +146,29 @@ export function createElectronShim(): any {
           return { ok: false, error: errMsg(e, 'Could not change password') }
         }
       },
+      // Confirms the cached session is still valid server-side (not expired,
+      // not revoked from another device/settings action) before the app
+      // trusts the user it restored from localStorage on boot.
+      validateSession: async () => {
+        try {
+          await api.get('/api/settings')
+          return true
+        } catch {
+          return false
+        }
+      },
+      // Revokes the session server-side so the token can't be replayed after
+      // the user signs out — clearing local state alone leaves it valid.
+      logout: async () => {
+        try {
+          await api.post('/api/auth/logout')
+        } catch {
+          /* token may already be expired/invalid — still clear local state */
+        } finally {
+          setToken(null)
+        }
+        return { ok: true }
+      },
     },
 
     store: {

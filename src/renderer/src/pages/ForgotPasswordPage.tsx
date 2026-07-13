@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Hexagon, Mail, ArrowRight, CheckCircle } from 'lucide-react'
 
-export default function ForgotPasswordPage(): JSX.Element {
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)

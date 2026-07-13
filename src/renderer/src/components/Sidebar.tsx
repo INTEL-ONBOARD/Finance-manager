@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  Home, Wallet, CreditCard, PieChart, Target, CalendarDays, TrendingUp,
+  Home, Wallet, CreditCard, PieChart, Target, CalendarDays,
   Users, Settings, HelpCircle, Sun, Moon,
-  ChevronDown, ChevronRight, Crown, Hexagon, Bell,
+  Crown, Hexagon, TrendingUp, LineChart, Briefcase, Sparkles, ArrowLeftRight, BotMessageSquare,
   PanelLeft
 } from 'lucide-react';
-import { useFinance } from '@/context/FinanceContext';
+
+// Electron's frameless-window drag region isn't in the standard CSS types.
+type DragRegionStyle = CSSProperties & { WebkitAppRegion?: 'drag' | 'no-drag' };
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: Home },
@@ -16,6 +18,16 @@ const navItems = [
   { label: 'Budget', href: '/budget', icon: PieChart },
   { label: 'Goals', href: '/goals', icon: Target },
   { label: 'Bills', href: '/bills', icon: CalendarDays },
+];
+
+// Previously had routes but no nav entry — reachable only by typing the URL.
+const exploreItems = [
+  { label: 'Investments', href: '/investments', icon: TrendingUp },
+  { label: 'Market', href: '/market', icon: LineChart },
+  { label: 'Portfolio', href: '/portfolio', icon: Briefcase },
+  { label: 'Predictions', href: '/predictions', icon: Sparkles },
+  { label: 'Exchanges', href: '/exchanges', icon: ArrowLeftRight },
+  { label: 'AI Chat', href: '/ai-chat', icon: BotMessageSquare },
 ];
 
 const bottomItems = [
@@ -33,8 +45,6 @@ interface SidebarProps {
 
 export default function Sidebar({ theme, onThemeToggle, isCollapsed, onToggleCollapse }: SidebarProps) {
   const { pathname } = useLocation();
-  const { unreadNotificationCount } = useFinance();
-  const [expandedItem, setExpandedItem] = useState('Home');
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -48,7 +58,7 @@ export default function Sidebar({ theme, onThemeToggle, isCollapsed, onToggleCol
       style={{ background: 'var(--bg-sidebar)', borderRight: '1px solid var(--border)' }}
     >
       {/* macOS Traffic Lights drag region */}
-      <div className="w-full h-8 shrink-0" style={{ WebkitAppRegion: 'drag' } as any} />
+      <div className="w-full h-8 shrink-0" style={{ WebkitAppRegion: 'drag' } as DragRegionStyle} />
 
       {/* Logo */}
       <div className={`flex ${isCollapsed ? 'flex-col items-center gap-4' : 'items-center gap-3'} px-5 pb-6 pt-2 shrink-0`}>
@@ -58,7 +68,7 @@ export default function Sidebar({ theme, onThemeToggle, isCollapsed, onToggleCol
         {!isCollapsed && (
           <span className="whitespace-nowrap" style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: 19, letterSpacing: '-0.01em' }}>FinMate</span>
         )}
-        <button onClick={onToggleCollapse} className={`transition-colors ${isCollapsed ? '' : 'ml-auto'}`} style={{ color: 'var(--text-muted)', WebkitAppRegion: 'no-drag' } as any}>
+        <button onClick={onToggleCollapse} aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} className={`transition-colors ${isCollapsed ? '' : 'ml-auto'}`} style={{ color: 'var(--text-muted)', WebkitAppRegion: 'no-drag' } as DragRegionStyle}>
           <PanelLeft size={20} strokeWidth={1.5} />
         </button>
       </div>
@@ -66,6 +76,33 @@ export default function Sidebar({ theme, onThemeToggle, isCollapsed, onToggleCol
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3">
         {navItems.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.label}
+              to={item.href}
+              className={`w-full flex items-center px-3 py-3 rounded-xl mb-0.5 transition-all duration-150 hover:bg-[var(--bg-card)]/5 ${isCollapsed ? 'justify-center' : 'gap-3'}`}
+              style={{
+                color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                display: 'flex',
+                textDecoration: 'none',
+              }}
+              title={isCollapsed ? item.label : undefined}
+            >
+              <item.icon size={18} strokeWidth={2} style={{ color: active ? 'var(--text-primary)' : 'var(--text-secondary)', flexShrink: 0 }} />
+              {!isCollapsed && (
+                <span className="whitespace-nowrap" style={{ fontSize: 14, fontWeight: active ? 600 : 500 }}>{item.label}</span>
+              )}
+            </Link>
+          );
+        })}
+
+        {!isCollapsed && (
+          <div className="px-3 pt-4 pb-1" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--text-tertiary)' }}>
+            EXPLORE
+          </div>
+        )}
+        {exploreItems.map((item) => {
           const active = isActive(item.href);
           return (
             <Link

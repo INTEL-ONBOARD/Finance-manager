@@ -12,10 +12,35 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
     ports:
       # localhost-only — the host Caddy reverse_proxy targets this port
       - "127.0.0.1:${API_PORT:-4200}:8080"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-finwise}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
+    # no host port — private to this compose network; API reaches it at mongo:27017
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -24,6 +49,13 @@ services:
     # no host port — private to this compose network, won't clash with other redis
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
 
 volumes:
   redis-data:
+  mongo-data:

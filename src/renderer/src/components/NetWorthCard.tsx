@@ -5,7 +5,16 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { useFinance } from '@/context/FinanceContext';
 import { formatCurrency } from '@/utils/formatCurrency';
 
-const CustomTooltip = ({ active, payload, currency }: any) => {
+interface TooltipEntry {
+  value: number;
+  payload: { month: string };
+}
+
+const CustomTooltip = ({ active, payload, currency }: {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  currency: string;
+}) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="px-3 py-2 rounded-xl shadow-xl"

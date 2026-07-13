@@ -110,7 +110,7 @@ export default function TransactionDetailModal({ transaction: txn, onClose }: Pr
               <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
                 {editing ? 'Edit Transaction' : 'Transaction Details'}
               </h2>
-              <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors" style={{ color: 'var(--text-muted)' }}>
+              <button onClick={onClose} aria-label="Close" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors" style={{ color: 'var(--text-muted)' }}>
                 <X size={15} />
               </button>
             </div>

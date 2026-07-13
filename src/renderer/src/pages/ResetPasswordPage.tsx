@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Hexagon, Lock, ArrowRight } from 'lucide-react'
 
-export default function ResetPasswordPage(): JSX.Element {
+export default function ResetPasswordPage() {
   const [pw, setPw] = useState('')
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
