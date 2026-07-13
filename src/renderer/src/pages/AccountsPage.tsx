@@ -323,7 +323,7 @@ export default function AccountsPage() {
 
       {/* ── Accounts grid ────────────────────────────────────────────────── */}
       {visibleAccounts.length > 0 && (
-        <div className="grid grid-cols-2 gap-5">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 20 }}>
           {visibleAccounts.map((acct, i) => {
             const acctTxns        = transactions.filter(t => t.account === acct.name);
             const recentTxns      = acctTxns.slice(0, 3);

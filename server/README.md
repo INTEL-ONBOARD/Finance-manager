@@ -69,13 +69,29 @@ SITE_ADDRESS=:80 docker compose up --build
 2. From this repo:
 
    ```bash
-   SSH_HOST=root@84.247.139.75 ./deploy/deploy.sh
+   SSH_HOST=root@84.247.139.75 COMPOSE_FILE=docker-compose.behind-proxy.yml ./deploy/deploy.sh
    ```
 
 The script installs Docker if missing, rsyncs the `server/` folder (never the
-`.env`), and runs `docker compose up -d --build`. Caddy terminates TLS and
-proxies REST + WebSocket to the API.
+`.env`), and runs `docker compose up -d --build --wait`, then verifies the
+`api` container is actually healthy before reporting success.
 
 > For a production finance app, use a domain so Caddy can issue a real
 > certificate. Bare-IP `:80` is for a first connectivity test only; set
 > `COOKIE_SECURE=false` in that case or cookies will not be sent.
+
+## Production
+
+- **Live domain:** `https://finmate.com.lk` (and `www.`) — a host-level Caddy
+  on the VPS (shared with other sites, not this repo's own `docker-compose`)
+  serves the web frontend at the domain root from `/opt/finwise-web-root` and
+  proxies `/finwise/*` to this backend on `127.0.0.1:4200`.
+- This backend is deployed independently of the frontend. Redeploying the
+  backend (above) does **not** update the web frontend — that's a separate
+  step from the repo root: `VITE_BASE=/ npm run build:web` then rsync
+  `dist-web/` to `/opt/finwise-web-root/` on the VPS.
+- The API is also reachable (but the static frontend is *not* served) at
+  `https://84.247.139.75/finwise/*` and `https://84-247-139-75.sslip.io/finwise/*`
+  — kept only because desktop-backend-mode builds (`VITE_API_BASE` in
+  `package.json`) point at the sslip.io host. Don't repurpose these for
+  frontend hosting again; `finmate.com.lk` is the one production frontend.

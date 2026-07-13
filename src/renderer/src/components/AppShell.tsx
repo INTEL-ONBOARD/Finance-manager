@@ -60,7 +60,9 @@ export default function AppShell({ children, fullBleed }: { children?: React.Rea
           </div>
         )}
         <main className={`flex-1 w-full ${fullBleed ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-          <div className={`${fullBleed ? 'h-full overflow-hidden' : 'p-8 flex flex-col gap-6'} w-full relative`}>
+          {/* Non-fullBleed pages are capped + centered so content doesn't stretch
+              edge-to-edge on wide monitors. fullBleed pages (e.g. chat) stay full. */}
+          <div className={`${fullBleed ? 'h-full overflow-hidden w-full' : 'p-8 flex flex-col gap-6 w-full max-w-[1280px] mx-auto'} relative`}>
             {children ?? <Outlet />}
           </div>
         </main>
